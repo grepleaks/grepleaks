@@ -22,6 +22,12 @@
   <a href="CONTRIBUTING.md">Contribute</a>
 </p>
 
+<br />
+
+<p align="center">
+  <img src="docs/assets/grepleaks-tui-demo.svg" alt="Grepleaks TUI — from the home screen, a recon prompt runs end to end: the agent plans, runs subfinder, reviews the discovered hosts and writes a report under /engagement" width="880" />
+</p>
+
 ---
 
 Grepleaks brings a conversational agent, a searchable **Pentest Tools** catalog
