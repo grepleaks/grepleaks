@@ -31,6 +31,61 @@
     .ty3 { animation: ty3K linear infinite; }
     .ty4 { animation: ty4K linear infinite; }
     .ty5 { animation: ty5K linear infinite; }
+
+    @keyframes ty0K {
+    0% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    0.99% { opacity:1; clip-path: inset(-10% 100% -10% 0) }
+    4.33% { opacity:1; clip-path: inset(-10% 0% -10% 0) }
+    6.3% { opacity:1; clip-path: inset(-10% 0% -10% 0) }
+    8.0% { opacity:1; clip-path: inset(-10% 100% -10% 0) }
+    8.05% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    100% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    }
+    @keyframes ty1K {
+    0% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    8.0% { opacity:1; clip-path: inset(-10% 100% -10% 0) }
+    12.34% { opacity:1; clip-path: inset(-10% 0% -10% 0) }
+    14.31% { opacity:1; clip-path: inset(-10% 0% -10% 0) }
+    16.52% { opacity:1; clip-path: inset(-10% 100% -10% 0) }
+    16.57% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    100% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    }
+    @keyframes ty2K {
+    0% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    16.52% { opacity:1; clip-path: inset(-10% 100% -10% 0) }
+    20.23% { opacity:1; clip-path: inset(-10% 0% -10% 0) }
+    22.2% { opacity:1; clip-path: inset(-10% 0% -10% 0) }
+    24.09% { opacity:1; clip-path: inset(-10% 100% -10% 0) }
+    24.14% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    100% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    }
+    @keyframes ty3K {
+    0% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    24.09% { opacity:1; clip-path: inset(-10% 100% -10% 0) }
+    29.33% { opacity:1; clip-path: inset(-10% 0% -10% 0) }
+    31.3% { opacity:1; clip-path: inset(-10% 0% -10% 0) }
+    33.97% { opacity:1; clip-path: inset(-10% 100% -10% 0) }
+    34.019999999999996% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    100% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    }
+    @keyframes ty4K {
+    0% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    33.97% { opacity:1; clip-path: inset(-10% 100% -10% 0) }
+    38.85% { opacity:1; clip-path: inset(-10% 0% -10% 0) }
+    40.82% { opacity:1; clip-path: inset(-10% 0% -10% 0) }
+    43.31% { opacity:1; clip-path: inset(-10% 100% -10% 0) }
+    43.36% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    100% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    }
+    @keyframes ty5K {
+    0% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    43.31% { opacity:1; clip-path: inset(-10% 100% -10% 0) }
+    48.19% { opacity:1; clip-path: inset(-10% 0% -10% 0) }
+    50.16% { opacity:1; clip-path: inset(-10% 0% -10% 0) }
+    52.64% { opacity:1; clip-path: inset(-10% 100% -10% 0) }
+    52.69% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    100% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
+    }
     .b-bub   { animation: bubK linear infinite; }
     .b-intro { animation: introK linear infinite; }
     .b-cmd   { animation: cmdK linear infinite; }
