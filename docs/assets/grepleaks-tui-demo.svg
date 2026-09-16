@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="560" viewBox="0 0 880 560" role="img" aria-labelledby="dTitle dDesc">
   <title id="dTitle">Grepleaks terminal demo</title>
-  <desc id="dDesc">The Grepleaks home screen with its ASCII wordmark. A recon prompt is typed, submitted, and the agent plans, runs subfinder, reviews the discovered hosts and writes a report under /engagement.</desc>
+  <desc id="dDesc">The Grepleaks home screen: 120+ pentest skills, 900+ pentest tools. The composer cycles the built-in pentest prompts, then a recon prompt is submitted and the agent plans, runs subfinder, reviews discovered hosts and writes a report under /engagement.</desc>
   <defs>
     <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#22d3ee" stop-opacity="0"/>
@@ -22,11 +22,15 @@
     .t-amber { fill: #ffb000; }
     .home    { animation: homeK linear infinite; }
     .session { opacity: 0; animation: sessK linear infinite; }
-    .tyP1    { animation: p1K linear infinite; }
-    .tyP2    { animation: p2K linear infinite; }
-    .tyIn    { animation: inK linear infinite; }
     .idleG   { animation: idleK linear infinite; }
     .blinkC  { animation: blink 1.06s steps(1) infinite; }
+    .tyIn    { animation: tyInK linear infinite; }
+    .ty0 { animation: ty0K linear infinite; }
+    .ty1 { animation: ty1K linear infinite; }
+    .ty2 { animation: ty2K linear infinite; }
+    .ty3 { animation: ty3K linear infinite; }
+    .ty4 { animation: ty4K linear infinite; }
+    .ty5 { animation: ty5K linear infinite; }
     .b-bub   { animation: bubK linear infinite; }
     .b-intro { animation: introK linear infinite; }
     .b-cmd   { animation: cmdK linear infinite; }
@@ -39,42 +43,30 @@
     .beamA   { animation: beamA 13s ease-in-out infinite alternate; }
     .beamB   { animation: beamB 19s ease-in-out infinite alternate; }
 
-    /* master loop: 30s. placeholder typewriter (real PENTEST_PROMPTS), then input */
-    @keyframes homeK { 0%,46.5% { opacity: 1; } 49.5%,98% { opacity: 0; } 100% { opacity: 1; } }
-    @keyframes sessK { 0%,46.5% { opacity: 0; } 49.5%,96.5% { opacity: 1; } 100% { opacity: 0; } }
+    @keyframes homeK { 0%,60.56% { opacity: 1; } 63.03%,98.36% { opacity: 0; } 100% { opacity: 1; } }
+    @keyframes sessK { 0%,60.56% { opacity: 0; } 63.03%,97.54% { opacity: 1; } 100% { opacity: 0; } }
     @keyframes blink { 0%,55% { opacity: 1; } 56%,100% { opacity: 0; } }
-    @keyframes idleK { 0%,2.9% { opacity: 1; } 3%,29.9% { opacity: 0; } 30%,31.9% { opacity: 1; } 32%,100% { opacity: 0; } }
-    /* type = right inset 100%->0 ; backspace = right inset 0->100 (terminal erase) */
-    @keyframes p1K { 0%,2.9%  { opacity: 0; clip-path: inset(-10% 100% -10% 0); }
-                     3%        { opacity: 1; clip-path: inset(-10% 100% -10% 0); }
-                     10%,13%   { opacity: 1; clip-path: inset(-10% 0% -10% 0); }
-                     17%       { opacity: 1; clip-path: inset(-10% 100% -10% 0); }
-                     17.1%,100% { opacity: 0; clip-path: inset(-10% 100% -10% 0); } }
-    @keyframes p2K { 0%,16.9% { opacity: 0; clip-path: inset(-10% 100% -10% 0); }
-                     17%       { opacity: 1; clip-path: inset(-10% 100% -10% 0); }
-                     23.5%,26.5% { opacity: 1; clip-path: inset(-10% 0% -10% 0); }
-                     30%       { opacity: 1; clip-path: inset(-10% 100% -10% 0); }
-                     30.1%,100% { opacity: 0; clip-path: inset(-10% 100% -10% 0); } }
-    @keyframes inK { 0%,31.9% { opacity: 0; clip-path: inset(-10% 100% -10% 0); }
-                     32%       { opacity: 1; clip-path: inset(-10% 100% -10% 0); }
-                     44%,46.5% { opacity: 1; clip-path: inset(-10% 0% -10% 0); }
-                     46.6%,100% { opacity: 0; clip-path: inset(-10% 0% -10% 0); } }
-    @keyframes bubK   { 0%,50.4% { opacity: 0; transform: translateY(8px); } 53%,100% { opacity: 1; transform: translateY(0); } }
-    @keyframes introK { 0%,55%   { opacity: 0; transform: translateY(8px); } 57.5%,100% { opacity: 1; transform: translateY(0); } }
-    @keyframes cmdK   { 0%,61%   { opacity: 0; transform: translateY(8px); } 63.5%,100% { opacity: 1; transform: translateY(0); } }
-    @keyframes o1K    { 0%,64.4% { opacity: 0; } 65.5%,100% { opacity: 1; } }
-    @keyframes o2K    { 0%,65.9% { opacity: 0; } 67%,100% { opacity: 1; } }
-    @keyframes o3K    { 0%,67.4% { opacity: 0; } 68.5%,100% { opacity: 1; } }
-    @keyframes findK  { 0%,72%   { opacity: 0; transform: translateY(8px); } 74.5%,100% { opacity: 1; transform: translateY(0); } }
-    @keyframes repK   { 0%,80%   { opacity: 0; transform: translateY(8px); } 82.5%,100% { opacity: 1; transform: translateY(0); } }
-    @keyframes compK  { 0%,86%   { opacity: 0; transform: translateY(8px); } 88.5%,100% { opacity: 1; transform: translateY(0); } }
+    @keyframes idleK { 0%,0.9% { opacity: 1; } 0.99%,100% { opacity: 0; } }
+    @keyframes tyInK { 0%,52.56% { opacity: 0; clip-path: inset(-10% 100% -10% 0); }
+                     52.64% { opacity: 1; clip-path: inset(-10% 100% -10% 0); }
+                     60.23%,100.0% { opacity: 1; clip-path: inset(-10% 0% -10% 0); } }
+    @keyframes bubK { 0%,63.85% { opacity: 0; transform: translateY(8px); } 66.31%,97.54% { opacity: 1; transform: translateY(0); } 100% { opacity: 1; transform: translateY(0); } }
+    @keyframes introK { 0%,67.96% { opacity: 0; transform: translateY(8px); } 70.42%,97.54% { opacity: 1; transform: translateY(0); } 100% { opacity: 1; transform: translateY(0); } }
+    @keyframes cmdK { 0%,72.89% { opacity: 0; transform: translateY(8px); } 75.35%,97.54% { opacity: 1; transform: translateY(0); } 100% { opacity: 1; transform: translateY(0); } }
+    @keyframes o1K { 0%,76.99% { opacity: 0; } 77.98%,100% { opacity: 1; } }
+    @keyframes o2K { 0%,78.64% { opacity: 0; } 79.62%,100% { opacity: 1; } }
+    @keyframes o3K { 0%,80.28% { opacity: 0; } 81.27%,100% { opacity: 1; } }
+    @keyframes findK { 0%,82.75% { opacity: 0; transform: translateY(8px); } 85.21%,97.54% { opacity: 1; transform: translateY(0); } 100% { opacity: 1; transform: translateY(0); } }
+    @keyframes repK { 0%,87.68% { opacity: 0; transform: translateY(8px); } 90.14%,97.54% { opacity: 1; transform: translateY(0); } 100% { opacity: 1; transform: translateY(0); } }
+    @keyframes compK { 0%,92.61% { opacity: 0; transform: translateY(8px); } 95.07%,97.54% { opacity: 1; transform: translateY(0); } 100% { opacity: 1; transform: translateY(0); } }
     @keyframes beamA  { from { transform: translate(-60px,0); } to { transform: translate(60px,0); } }
     @keyframes beamB  { from { transform: translate(50px,0); } to { transform: translate(-50px,0); } }
+
     @media (prefers-reduced-motion: reduce) {
-      .home,.session,.tyP1,.tyP2,.tyIn,.idle,.b-bub,.b-intro,.b-cmd,.b-o1,.b-o2,.b-o3,.b-find,.b-rep,.b-comp,.beamA,.beamB { animation: none !important; }
+      .home,.session,.idleG,.blinkC,.tyIn,.ty0,.ty1,.ty2,.ty3,.ty4,.ty5,.b-bub,.b-intro,.b-cmd,.b-o1,.b-o2,.b-o3,.b-find,.b-rep,.b-comp,.beamA,.beamB { animation: none !important; }
       .home { opacity: 0; }
       .session { opacity: 1; }
-      .idle { opacity: 0; }
+      .idleG,.blinkC { opacity: 0; }
     }
   </style>
 
@@ -548,17 +540,34 @@
         <rect x="695.6" y="173.3" width="7.2" height="2.4"/>
         <rect x="698" y="167" width="2.4" height="8.7"/>
       </g>
-    <text x="440.0" y="206.0" text-anchor="middle" font-size="12" letter-spacing="3" class="t-mut">YOUR AI PENTEST ENVIRONMENT</text>
+    <text x="440.0" y="208.0" text-anchor="middle" font-size="12" letter-spacing="3" class="t-mut">YOUR AI PENTEST ENVIRONMENT</text>
+    <text x="440.0" y="330" text-anchor="middle" font-size="14" font-weight="bold"><tspan class="t-cyan">120+</tspan><tspan class="t-white"> pentest skills</tspan><tspan class="t-mut" font-weight="normal">&#160;&#160;|&#160;&#160;</tspan><tspan class="t-cyan">900+</tspan><tspan class="t-white"> pentest tools</tspan></text>
 
     <rect x="160" y="420" width="560" height="58" rx="10" fill="#0f1c20" stroke="#16282e"/>
     <g class="idleG"><rect x="176" y="433" width="7" height="13" fill="#22d3ee" class="blinkC"/></g>
-    <g class="tyP1" style="clip-path: inset(-10% 100% -10% 0)">
+    <g class="ty0" style="clip-path: inset(-10% 100% -10% 0)">
         <rect x="398" y="433" width="7" height="13" fill="#22d3ee"/>
         <text x="176" y="444" font-size="10.0" class="t-mut" xml:space="preserve">Map the attack surface of example.com</text>
     </g>
-    <g class="tyP2" style="clip-path: inset(-10% 100% -10% 0)">
+    <g class="ty1" style="clip-path: inset(-10% 100% -10% 0)">
+        <rect x="464" y="433" width="7" height="13" fill="#22d3ee"/>
+        <text x="176" y="444" font-size="10.0" class="t-mut" xml:space="preserve">Start a pentest: define the scope and recon plan</text>
+    </g>
+    <g class="ty2" style="clip-path: inset(-10% 100% -10% 0)">
         <rect x="422" y="433" width="7" height="13" fill="#22d3ee"/>
         <text x="176" y="444" font-size="10.0" class="t-mut" xml:space="preserve">Enumerate subdomains and exposed services</text>
+    </g>
+    <g class="ty3" style="clip-path: inset(-10% 100% -10% 0)">
+        <rect x="524" y="433" width="7" height="13" fill="#22d3ee"/>
+        <text x="176" y="444" font-size="10.0" class="t-mut" xml:space="preserve">Audit this API for authentication and access-control flaws</text>
+    </g>
+    <g class="ty4" style="clip-path: inset(-10% 100% -10% 0)">
+        <rect x="500" y="433" width="7" height="13" fill="#22d3ee"/>
+        <text x="176" y="444" font-size="10.0" class="t-mut" xml:space="preserve">Review this repository for secrets and vulnerable code</text>
+    </g>
+    <g class="ty5" style="clip-path: inset(-10% 100% -10% 0)">
+        <rect x="500" y="433" width="7" height="13" fill="#22d3ee"/>
+        <text x="176" y="444" font-size="10.0" class="t-mut" xml:space="preserve">Analyze these scan results and prioritize the findings</text>
     </g>
     <g class="tyIn" style="clip-path: inset(-10% 100% -10% 0)">
         <rect x="680" y="433" width="7" height="13" fill="#22d3ee"/>

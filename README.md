@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/grepleaks-banner.svg" alt="Grepleaks — Your AI pentest environment" width="1200" />
+  <img src="docs/assets/grepleaks-tui-demo.svg" alt="Grepleaks TUI — 120+ pentest skills, 900+ pentest tools. The composer cycles the built-in pentest prompts, then a recon engagement runs end to end and writes a report under /engagement" width="880" />
 </p>
 
 <p align="center">
@@ -20,12 +20,6 @@
   <a href="#working-with-your-host">Host access</a> ·
   <a href="#documentation">Documentation</a> ·
   <a href="CONTRIBUTING.md">Contribute</a>
-</p>
-
-<br />
-
-<p align="center">
-  <img src="docs/assets/grepleaks-tui-demo.svg" alt="Grepleaks TUI — from the home screen, a recon prompt runs end to end: the agent plans, runs subfinder, reviews the discovered hosts and writes a report under /engagement" width="880" />
 </p>
 
 ---
