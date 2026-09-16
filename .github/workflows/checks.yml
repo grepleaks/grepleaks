@@ -1,0 +1,53 @@
+name: Checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  portable:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - run: python -m unittest discover -s tests -v
+      - run: python scripts/check-release.py --no-gitleaks
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - run: go install github.com/zricethezav/gitleaks/v8@v8.29.1
+      - run: python3 scripts/check-release.py
+        env:
+          GITLEAKS_BIN: /home/runner/go/bin/gitleaks
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - run: curl -fsSL https://bun.sh/install | bash -s -- bun-v1.4.2
+      - run: echo "$HOME/.bun/bin" >> "$GITHUB_PATH"
+      - run: bun install --frozen-lockfile
+        working-directory: engine
+      - run: bun audit
+        working-directory: engine
+      - run: bun typecheck
+        working-directory: engine/packages/opencode
+      - run: bun typecheck
+        working-directory: engine/packages/tui
+      - run: bun test test/provider/provider.test.ts test/provider/transform.test.ts test/plugin/loader-shared.test.ts
+        working-directory: engine/packages/opencode
+      - run: bun test test/permission test/auth test/session --timeout 30000 --only-failures
+        working-directory: engine/packages/opencode
+      - run: bun test --timeout 30000 --only-failures
+        working-directory: engine/packages/tui
+  container:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - run: python3 scripts/e2e-install.py
+      - run: sudo apt-get update && sudo apt-get install -y tmux
+      - run: python3 scripts/smoke-tui.py

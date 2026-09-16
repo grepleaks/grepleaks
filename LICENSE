@@ -1,0 +1,98 @@
+Grepleaks Source Available License 1.0
+
+Copyright (c) 2026 the respective Grepleaks contributors.
+
+This is a custom source-available license. It is not the MIT License and is
+not an Open Source Initiative-approved open-source license.
+
+1. SCOPE AND THIRD-PARTY RIGHTS
+
+"Covered Material" means the original, copyrightable Grepleaks code,
+modifications, documentation and artwork offered under this license by their
+respective copyright holders (the "Licensors"). A reference to Covered
+Material includes copies and modified or derivative versions incorporating
+that material, whether distributed as source code or executable software.
+
+Covered Material does not include pre-existing OpenCode code, separately
+licensed third-party contributions, dependencies, tools or bundled skills.
+Those materials retain their own licenses and notices. In a file containing
+both upstream material and original Grepleaks modifications, this license
+applies only to the original Grepleaks modifications that the Licensors are
+entitled to license. See THIRD_PARTY_NOTICES.md and engine/GREPLEAKS_LICENSE.md.
+
+Nothing here revokes or limits rights granted under a third-party license,
+a separate agreement, a previously granted license, or applicable law. This
+license does not claim ownership of third-party material or impose its
+restrictions on independently obtained copies of that material.
+
+2. PERMITTED USE
+
+Subject to these terms, the Licensors grant you a worldwide, royalty-free,
+non-exclusive copyright license to use, run, inspect, copy and modify the
+Covered Material, and to distribute copies or derivative versions without
+charge, provided that you comply with Sections 3 and 4.
+
+These permissions include personal, educational, research and internal
+business use. You may use the Covered Material to perform paid penetration
+tests, security audits, consulting, training and other professional services,
+subject to the distinction in Section 3 between delivering your services and
+selling or providing paid access to the software itself.
+
+3. NO RESALE OR PAID SOFTWARE ACCESS
+
+Without separate written permission from the holders of the applicable
+rights, this license does not permit you to:
+
+(a) sell, rent, license for a fee, or charge for distributing copies of the
+    Covered Material, including a modified or rebranded version;
+(b) include the Covered Material in a paid software distribution or bundle
+    as a means of charging for those copies; or
+(c) offer paid access to the Covered Material's functionality as a hosted
+    software product, subscription, SaaS, API or agent service.
+
+These restrictions apply whether payment is charged directly for the
+software or required through another product, service or mandatory payment
+that grants access to it. Renaming the software, changing its branding,
+adding features or modifying its code does not by itself remove these
+restrictions from versions incorporating Covered Material.
+
+For clarity, you may charge clients for professional work carried out using
+Grepleaks, and deliver reports, findings, evidence, recommendations and other
+results of that work. You may also charge for support, setup or training,
+provided payment is for that work and does not purchase a copy, software
+license or access to a hosted Grepleaks software product. You may not label
+a sale of software or paid software access as a professional service to
+avoid this section.
+
+This license does not require you to license your reports or other outputs
+under these terms. Any Covered Material or third-party material reproduced
+in an output remains subject to its applicable license.
+
+4. REDISTRIBUTION AND NOTICES
+
+When sharing Covered Material or a derivative version, retain this license
+and the applicable copyright, attribution and third-party notices. Identify
+your modifications so they are not presented as the Licensors' original
+work. Do not remove the restrictions on Covered Material, or offer recipients
+rights to that material which this license does not grant.
+
+You retain rights in your own original contributions. You may choose terms
+for those contributions that do not purport to override this license for
+Covered Material or the licenses of incorporated third-party material.
+
+5. OTHER RIGHTS AND SEPARATE PERMISSION
+
+This license grants only the copyright permissions expressly stated here.
+It does not grant trademark rights or permission to claim an endorsement.
+The holders of applicable rights may grant separate written permissions for
+uses not covered by this license. Your permissions under this license are
+conditional on compliance with its terms.
+
+6. NO WARRANTY OR LIABILITY
+
+To the extent allowed by applicable law, the Covered Material is supplied
+"as is", without warranties or conditions of any kind, including warranties
+of merchantability, fitness for a particular purpose or non-infringement.
+To that same extent, the Licensors are not liable for claims, damages or
+other liability arising from the Covered Material or its use, whether in
+contract, tort or otherwise.

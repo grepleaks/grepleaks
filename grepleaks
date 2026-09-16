@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+HERE="$(cd "$(dirname "$0")" && pwd)"
+command -v python3 >/dev/null || { echo 'Grepleaks requires Python 3.10+ for the cross-platform launcher. See INSTALL.md.' >&2; exit 1; }
+exec python3 "$HERE/scripts/launch.py" "$@"

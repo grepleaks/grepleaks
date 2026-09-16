@@ -1,0 +1,45 @@
+# Local-only material never published in this repository.
+/-C
+/landing/
+/engagement_izzico/
+/DESIGN.md
+/PRODUCT.md
+/.impeccable/
+# Credentials and local configuration (never commit real values).
+.env
+.env.*
+!.env.example
+**/auth.json
+**/credentials.json
+**/opencode.local*.json
+**/opencode.*.local.json
+**/opencode.acme.json
+*.pem
+*.key
+*.p12
+*.pfx
+# Host artifacts and engagement data.
+/engagements/
+/reports/
+/private/
+/dev/
+/botnet/
+/tui/
+*.log
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+# Generated dependencies/builds.
+**/node_modules/
+**/dist/
+**/.turbo/
+**/__pycache__/
+*.pyc
+*.tsbuildinfo
+.DS_Store
+/.grepleaks-smoke-*/
+
+/.grepleaks-models-*/
+/.grepleaks-tui-*/
