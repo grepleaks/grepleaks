@@ -26,24 +26,6 @@ tui
 engine/artifacts
 engine/perf
 .grepleaks-smoke-*
-# Upstream products outside the supported terminal workspace graph.
-engine/packages/app
-engine/packages/desktop
-engine/packages/web
-engine/packages/console
-engine/packages/stats
-engine/packages/storybook
-engine/packages/enterprise
-engine/packages/function
-engine/packages/session-ui
-engine/packages/slack
-engine/packages/cli
-engine/packages/sdk-next
-engine/packages/client
-engine/packages/httpapi-codegen
-engine/github
-engine/sdks
-engine/.github
 
 .grepleaks-models-*
 .grepleaks-tui-*

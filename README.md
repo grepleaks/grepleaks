@@ -25,7 +25,7 @@
 ---
 
 Grepleaks brings a conversational agent, a searchable **Pentest Tools** catalog
-and a Kali Linux environment into one terminal interface. Ask it to investigate,
+and a Debian-based Linux toolbox into one terminal interface. Ask it to investigate,
 review its proposed actions, and inspect the results as you work.
 
 Built on an [OpenCode](https://github.com/anomalyco/opencode) fork and OpenTUI,
@@ -36,7 +36,7 @@ interactive tool cards and pentest-oriented prompt suggestions.
 > **Early preview.** The complete Docker workflow has been tested on macOS with
 > Colima; component tests also pass under Linux. Launchers are provided for macOS,
 > Windows and Linux, but full host pairing on native Windows/Linux still needs
-> validation. See the [validation report](PUBLICATION_REVIEW.md) for exact coverage.
+> validation.
 
 ## Inside Grepleaks
 
@@ -59,7 +59,7 @@ You need:
   or Colima can provide it; Windows uses Docker Desktop; Linux can use Docker Engine.
 - **Python 3.10+** on your machine. No extra Python packages are required.
 - An **OpenAI-compatible model API**: its base URL, model ID and API key.
-- Internet access and enough free space for the Kali image and its dependencies.
+- Internet access and enough free space for the Docker image and its dependencies.
   The first build downloads a substantial amount of software.
 
 Clone this repository, or grab the sources as an archive:
@@ -267,8 +267,6 @@ More detail, including authenticated headless API mode: [INSTALL.md](INSTALL.md)
 | [Security](SECURITY.md) | Data exposure, permissions and vulnerability reporting. |
 | [Contributing](CONTRIBUTING.md) | Local development, tests and contribution conventions. |
 | [Licensing](docs/LICENSING.md) | Permitted professional use, sharing and the no-resale restriction. |
-| [Validation report](PUBLICATION_REVIEW.md) | Checks performed and remaining validation. |
-| [Testing](docs/TESTING.md) | Repeatable installation, conversation and terminal E2E checks. |
 
 Use Grepleaks only on systems you own or are authorized to test. Your selected
 model provider may receive prompts, file contents and tool output. Review its

@@ -21,7 +21,7 @@ engine/.opencode/skills/exploiting-websocket-vulnerabilities/SKILL.md:generic-ap
 engine/.opencode/skills/exploiting-websocket-vulnerabilities/SKILL.md:generic-api-key:72
 engine/.opencode/skills/exploiting-websocket-vulnerabilities/scripts/agent.py:generic-api-key:35
 engine/.opencode/skills/exploiting-websocket-vulnerabilities/scripts/agent.py:generic-api-key:57
-engine/.opencode/skills/kali-arsenal/references/wireless-attacks.md:generic-api-key:126
+engine/.opencode/skills/tool-arsenal/references/wireless-attacks.md:generic-api-key:126
 engine/.opencode/skills/performing-active-discovery/SKILL.md:curl-auth-user:121
 engine/.opencode/skills/performing-cryptographic-audit-of-application/scripts/process.py:generic-api-key:282
 engine/.opencode/skills/performing-jwt-none-algorithm-attack/SKILL.md:jwt:79

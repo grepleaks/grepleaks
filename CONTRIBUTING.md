@@ -1,14 +1,13 @@
 # Contributing
 
-Use the Grepleaks Docker launcher for product testing. Follow `engine/AGENTS.md`
-when modifying engine packages and keep upstream license notices intact.
+Use the Grepleaks Docker launcher for product testing and keep upstream license
+notices intact.
 
 Before submitting changes:
 
 ```bash
-python3 -m unittest discover -s tests -v
-python3 scripts/check-release.py
 bash -n grepleaks docker/entrypoint.sh
+python3 -m py_compile scripts/install.py scripts/launch.py scripts/smoke-container.py
 ```
 
 For TUI changes, install engine dependencies with Bun 1.4.2, then run `bun typecheck`

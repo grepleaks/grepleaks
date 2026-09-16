@@ -1,15 +1,15 @@
-# Grepleaks — Kali image running the FORKED engine FROM SOURCE.
+# Grepleaks — Debian-based security toolbox running the FORKED engine FROM SOURCE.
 #
 # We run the engine from source (bun + node_modules) rather than a compiled
 # binary: `bun build --compile` tree-shakes a module out of opencode's DI graph
 # (makeLocationNode) → `node.name` crash at runtime. Source keeps the full graph.
 #
-# Slim-core Kali: a small set of rock-solid tools + package managers; the agent
+# Debian slim core: a small set of rock-solid tools + package managers; the agent
 # installs long-tail tools on demand (AGENTS.md) and cleans them up.
 #
 # Build (from repo root):  docker build -f docker/Dockerfile -t grepleaks:local .
 
-FROM kalilinux/kali-rolling
+FROM debian:stable-slim
 
 ENV DEBIAN_FRONTEND=noninteractive \
     PATH="/usr/local/bin:/root/.bun/bin:/root/go/bin:/usr/local/go/bin:${PATH}" \

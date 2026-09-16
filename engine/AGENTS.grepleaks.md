@@ -10,7 +10,7 @@ be respected; never bypass them.
 
 ## Execution environment
 
-The supported launcher runs inside a disposable Kali Linux container. Detect the
+The supported launcher runs inside a disposable Debian-based container. Detect the
 OS and available package managers before running commands. /engagement is the
 persistent workspace, mounted read-write from the host: its contents are NOT disposable.
 
@@ -33,7 +33,7 @@ Follow this lifecycle whenever selecting an external pentest tool:
 1. Identify the mission: what question must this action answer, on which authorized
    target, and what evidence would confirm or reject the hypothesis?
 2. Consult the catalog for that purpose. Load selecting-pentest-tooling for method
-   selection and kali-arsenal for the matching family reference and tool entry.
+   selection and tool-arsenal for the matching family reference and tool entry.
    Load any other relevant available skill before following its workflow. Skills
    are specialized instructions, not executable tools. Read referenced files from
    the skill's base directory; do not infer installation commands from a tool name.
@@ -114,7 +114,7 @@ output to transfer an artifact. Treat staged files and symlinks as untrusted;
 do not follow links outside the copied artifact to fetch unrelated files.
 Preserve useful findings and copies until the user requests their deletion.
 
-A macOS .app cannot run natively in Kali Linux. Use host_run only for tests that
+A macOS .app cannot run natively in the Linux container. Use host_run only for tests that
 require the real macOS runtime, UI, entitlements, keychain or process behavior.
 Explain why those steps need the host. Likewise, Windows-specific runtime tests
 need a compatible environment. Linux binaries may run inside the container only

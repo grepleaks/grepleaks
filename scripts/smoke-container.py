@@ -49,7 +49,7 @@ def main():
             request = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
             calls.append(request)
             system = "\n".join(str(item.get("content", "")) for item in request.get("messages", []) if item.get("role") in ("system", "developer"))
-            expected = ["expert penetration tester and cybersecurity analyst", "Before every tool call", "kali-arsenal", "selecting-pentest-tooling", "Never purge preinstalled software"]
+            expected = ["expert penetration tester and cybersecurity analyst", "Before every tool call", "tool-arsenal", "selecting-pentest-tooling", "Never purge preinstalled software"]
             if any(text not in system for text in expected) or "You are opencode, an interactive CLI tool" in system:
                 self.send_error(422, "Grepleaks prompt or skill discovery missing")
                 return

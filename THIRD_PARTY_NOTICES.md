@@ -76,7 +76,7 @@ replacing the licenses of incorporated third-party material.
 - `exploiting-vulnerabilities-with-metasploit-framework`: Apache-2.0
 - `exploiting-websocket-vulnerabilities`: Apache-2.0
 - `intercepting-mobile-traffic-with-burpsuite`: Apache-2.0
-- `kali-arsenal`: MIT (existing inherited grant; not relicensed)
+- `tool-arsenal`: MIT (existing inherited grant; not relicensed)
 - `orchestrating-end-to-end-web-attack`: Apache-2.0
 - `orchestrating-llm-attacks-with-pyrit`: Apache-2.0
 - `performing-active-discovery`: Apache-2.0
@@ -158,8 +158,9 @@ replacing the licenses of incorporated third-party material.
 
 Package-level LICENSE/NOTICE files and lockfiles remain in the source tree.
 Dependency licenses are not replaced by Grepleaks's root license. Tools installed
-from Kali or other registries have their own licenses. The tool catalog describes
-those tools; it does not redistribute every listed tool's source or binary.
+from distro repositories or other registries have their own licenses. The tool
+catalog describes those tools; it does not redistribute every listed tool's
+source or binary.
 
 The welcome animation is an original OpenTUI implementation inspired by the Beams
 concept in sysc-Go: https://github.com/Nomadcxx/sysc-Go. No Go implementation or
