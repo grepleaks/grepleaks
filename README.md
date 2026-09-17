@@ -124,6 +124,28 @@ between your saved models; the public provider catalog is not shown.
 installer again with the new release's sources. Starting a conversation does not
 require a build. Source development with `--dev` uses `./grepleaks` in a checkout.
 
+### Which model to use
+
+Grepleaks is **bring your own key**: you connect an OpenAI-compatible provider and
+pay it directly. Nothing runs through a Grepleaks service.
+
+For pentest work, prefer an **uncensored or abliterated model**. Standard aligned
+models frequently refuse legitimate, authorized security tasks — reconnaissance,
+exploit development, payload analysis — which stops the agent mid-engagement.
+An abliterated model keeps the capabilities while behaving on authorized work.
+
+Providers we recommend:
+
+| Provider | Why |
+| :--- | :--- |
+| **[abliteration.ai](https://abliteration.ai/)** | Hosted abliterated models plus a policy gateway (allow / refuse / rewrite / redact) built for red teams. OpenAI and Anthropic compatible. |
+| **[nano-gpt.com](https://nano-gpt.com/)** | Large catalog with many uncensored models, pay-as-you-go. OpenAI compatible. |
+| **[routeway.ai](https://routeway.ai/)** | 100+ models through one key, states that prompts are not logged. OpenAI compatible. |
+
+Any other OpenAI-compatible provider works too — pick a model that supports
+**tool calling**, since the agent drives tools through it. Set the base URL, the
+exact model ID and the key in the TUI (**Models** on first launch).
+
 <details>
 <summary><strong>Already have your provider settings in environment variables?</strong></summary>
 
