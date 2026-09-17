@@ -20,17 +20,17 @@
     .t-mut   { fill: #557079; }
     .t-green { fill: #00ff9c; }
     .t-amber { fill: #ffb000; }
-    .home    { animation: homeK linear infinite; }
-    .session { opacity: 0; animation: sessK linear infinite; }
-    .idleG   { animation: idleK linear infinite; }
+    .home    { animation: homeK 60.86s linear infinite; }
+    .session { opacity: 0; animation: sessK 60.86s linear infinite; }
+    .idleG   { animation: idleK 60.86s linear infinite; }
     .blinkC  { animation: blink 1.06s steps(1) infinite; }
-    .tyIn    { animation: tyInK linear infinite; }
-    .ty0 { animation: ty0K linear infinite; }
-    .ty1 { animation: ty1K linear infinite; }
-    .ty2 { animation: ty2K linear infinite; }
-    .ty3 { animation: ty3K linear infinite; }
-    .ty4 { animation: ty4K linear infinite; }
-    .ty5 { animation: ty5K linear infinite; }
+    .tyIn    { animation: tyInK 60.86s linear infinite; }
+    .ty0 { animation: ty0K 60.86s linear infinite; }
+    .ty1 { animation: ty1K 60.86s linear infinite; }
+    .ty2 { animation: ty2K 60.86s linear infinite; }
+    .ty3 { animation: ty3K 60.86s linear infinite; }
+    .ty4 { animation: ty4K 60.86s linear infinite; }
+    .ty5 { animation: ty5K 60.86s linear infinite; }
 
     @keyframes ty0K {
     0% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
@@ -86,15 +86,15 @@
     52.69% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
     100% { opacity:0; clip-path: inset(-10% 100% -10% 0) }
     }
-    .b-bub   { animation: bubK linear infinite; }
-    .b-intro { animation: introK linear infinite; }
-    .b-cmd   { animation: cmdK linear infinite; }
-    .b-o1    { animation: o1K linear infinite; }
-    .b-o2    { animation: o2K linear infinite; }
-    .b-o3    { animation: o3K linear infinite; }
-    .b-find  { animation: findK linear infinite; }
-    .b-rep   { animation: repK linear infinite; }
-    .b-comp  { animation: compK linear infinite; }
+    .b-bub   { animation: bubK 60.86s linear infinite; }
+    .b-intro { animation: introK 60.86s linear infinite; }
+    .b-cmd   { animation: cmdK 60.86s linear infinite; }
+    .b-o1    { animation: o1K 60.86s linear infinite; }
+    .b-o2    { animation: o2K 60.86s linear infinite; }
+    .b-o3    { animation: o3K 60.86s linear infinite; }
+    .b-find  { animation: findK 60.86s linear infinite; }
+    .b-rep   { animation: repK 60.86s linear infinite; }
+    .b-comp  { animation: compK 60.86s linear infinite; }
     .beamA   { animation: beamA 13s ease-in-out infinite alternate; }
     .beamB   { animation: beamB 19s ease-in-out infinite alternate; }
 
