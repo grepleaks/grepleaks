@@ -2,6 +2,7 @@
 """Per-user installer. No third-party Python dependencies or administrator access."""
 import argparse
 import os
+import ssl
 from pathlib import Path
 import re
 import shlex
@@ -9,6 +10,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import urllib.error
 import urllib.request
 import zipfile
 
@@ -18,6 +20,37 @@ RUNTIME = (
     "LICENSE", "THIRD_PARTY_NOTICES.md",
 )
 MARKER = "# Grepleaks user installation"
+
+
+def fetch(url, archive):
+    """Download url to archive. Retries with an explicit CA bundle when the
+    interpreter has no configured certificate store (python.org macOS builds)."""
+    request = urllib.request.Request(url, headers={"User-Agent": "grepleaks-installer"})
+    try:
+        with urllib.request.urlopen(request) as response, archive.open("wb") as output:
+            shutil.copyfileobj(response, output)
+        return
+    except urllib.error.URLError as error:
+        if not isinstance(getattr(error, "reason", None), ssl.SSLCertVerificationError):
+            raise
+    bundles = []
+    try:
+        import certifi
+        bundles.append(Path(certifi.where()))
+    except ImportError:
+        pass
+    bundles += [Path("/etc/ssl/cert.pem"), Path("/etc/ssl/certs/ca-certificates.crt")]
+    for bundle in bundles:
+        if not bundle.is_file():
+            continue
+        context = ssl.create_default_context(cafile=str(bundle))
+        try:
+            with urllib.request.urlopen(request, context=context) as response, archive.open("wb") as output:
+                shutil.copyfileobj(response, output)
+            return
+        except urllib.error.URLError:
+            continue
+    raise
 
 
 def extract(archive, destination):
@@ -156,7 +189,7 @@ def main():
                     raise ValueError("Invalid GitHub repository or ref")
                 archive = Path(tmp) / "source.zip"
                 print("Downloading Grepleaks…", flush=True)
-                urllib.request.urlretrieve(f"https://codeload.github.com/{args.repository}/zip/{args.ref}", archive)
+                fetch(f"https://codeload.github.com/{args.repository}/zip/{args.ref}", archive)
                 unpacked = Path(tmp) / "source"
                 unpacked.mkdir()
                 source = extract(archive, unpacked)
