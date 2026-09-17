@@ -130,6 +130,9 @@ def main():
             child = subprocess.Popen(launcher + bridge + ["--workspace", directory, "serve"], cwd=directory, env=env, stdin=subprocess.DEVNULL, stdout=log, stderr=log)
             try:
                 wait_for(lambda: api("/global/health"), "authenticated server health")
+                if not args.no_host_bridge:
+                    # The first host_run fails "not connected" if prompted before pairing completes.
+                    wait_for(lambda: "host companion paired" in logpath.read_text(errors="ignore"), "host companion pairing")
                 ids = subprocess.run(["docker", "ps", "-q", "--filter", f"publish={port}"], capture_output=True, text=True, check=True).stdout.split()
                 check(len(ids) == 1, ids)
                 details = json.loads(subprocess.run(["docker", "inspect", ids[0]], capture_output=True, text=True, check=True).stdout)[0]

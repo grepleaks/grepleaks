@@ -19,8 +19,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
 RUN apt-get update && apt-get install -y --no-install-recommends \
       ca-certificates curl wget git jq unzip \
       python3 python3-pip python3-venv pipx golang-go ruby make g++ \
-      nmap masscan dnsutils whois netcat-traditional \
-      ffuf gobuster nikto whatweb sqlmap hydra \
+      nmap masscan bind9-dnsutils whois netcat-traditional \
+      ffuf gobuster whatweb sqlmap hydra \
     && rm -rf /var/lib/apt/lists/*
 
 # bun runtime (runs the engine from source)

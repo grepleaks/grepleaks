@@ -42,7 +42,7 @@ Nikto is an open-source web server and web application scanner that tests agains
 - When validating security controls through hands-on testing
 
 ## Prerequisites
-- Nikto installed (Perl-based, preinstalled in the Grepleaks image)
+- Nikto available (Perl-based; install on demand: `command -v nikto || git clone https://github.com/suls/nikto.git /opt/nikto && ln -s /opt/nikto/nikto.pl /usr/local/bin/nikto`)
 - Written authorization to scan target web servers
 - Network access to target web applications
 - Understanding of HTTP/HTTPS protocols

@@ -4,8 +4,10 @@
 
 - A working Docker daemon with Linux containers.
 - Python 3.10+ on the host (`python3` on macOS/Linux; `py -3` on Windows). No third-party Python packages are needed.
-- Sufficient disk space for the Docker image and the Bun monorepo dependencies; this is a large
-  source distribution. Check `docker system df` and available host/VM disk space.
+- About **4 GB** of free disk space. The sources are a ~40 MB download; the first
+  install builds the local Docker image (~3 GB: Debian base, core toolkit, Bun
+  runtime and engine dependencies). Check `docker system df` and available
+  host/VM disk space.
 - Internet access for image construction, provider calls and on-demand tool installs.
 - An API key, base URL and model ID from your OpenAI-compatible provider.
 

@@ -59,8 +59,9 @@ You need:
   or Colima can provide it; Windows uses Docker Desktop; Linux can use Docker Engine.
 - **Python 3.10+** on your machine. No extra Python packages are required.
 - An **OpenAI-compatible model API**: its base URL, model ID and API key.
-- Internet access and enough free space for the Docker image and its dependencies.
-  The first build downloads a substantial amount of software.
+- Internet access and about **4 GB** of free disk space. The sources are a small
+  download (~40 MB as a ZIP), and the first install builds the local Docker
+  image (~3 GB: Debian base, core toolkit, Bun runtime and engine dependencies).
 
 Clone this repository, or grab the sources as an archive:
 
