@@ -126,6 +126,18 @@ def install(source, home):
     return wrapper
 
 
+def detect_version(source, repository, ref):
+    """Version label reported by `grepleaks --version`."""
+    if repository:
+        return ref
+    try:
+        described = subprocess.run(["git", "describe", "--tags", "--always"], cwd=source,
+                                   capture_output=True, text=True, check=True).stdout.strip()
+        return described or "local"
+    except (OSError, subprocess.CalledProcessError):
+        return "local"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     origin = parser.add_mutually_exclusive_group(required=True)
@@ -151,10 +163,12 @@ def main():
             for name in (*RUNTIME, "docker/Dockerfile"):
                 if not (source / name).is_file():
                     raise ValueError(f"Missing installation file: {name}")
+            version = detect_version(source, args.repository, args.ref)
             print("Building the Grepleaks image. The first installation can take several minutes…", flush=True)
-            subprocess.run(["docker", "build", "-f", "docker/Dockerfile", "-t", "grepleaks:local", "."], cwd=source, check=True)
+            subprocess.run(["docker", "build", "--build-arg", f"OPENCODE_VERSION={version}",
+                            "-f", "docker/Dockerfile", "-t", "grepleaks:local", "."], cwd=source, check=True)
             wrapper = install(source, Path.home())
-        print(f"Installed: {wrapper}\nOpen a new terminal and run: grepleaks")
+        print(f"Installed Grepleaks {version}: {wrapper}\nOpen a new terminal and run: grepleaks")
         return 0
     except (OSError, ValueError, subprocess.CalledProcessError, zipfile.BadZipFile) as error:
         print(f"Grepleaks installation failed: {error}\nCheck that Docker is installed and running, and that enough disk space is available.", file=sys.stderr)

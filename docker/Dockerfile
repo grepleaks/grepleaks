@@ -50,5 +50,9 @@ COPY engine/.opencode/skills/ /opt/grepleaks/skills/
 COPY engine/AGENTS.grepleaks.md /opt/grepleaks/AGENTS.md
 COPY LICENSE THIRD_PARTY_NOTICES.md /opt/grepleaks/
 
+# Reported by `grepleaks --version`. The installer passes the release or ref.
+ARG OPENCODE_VERSION=local
+ENV OPENCODE_VERSION=${OPENCODE_VERSION}
+
 EXPOSE 4096
 ENTRYPOINT ["/opt/grepleaks/entrypoint.sh"]

@@ -46,6 +46,21 @@ untouched. Previous small host runtime directories remain available on disk.
 The downloaded checkout can be removed afterwards. For `--dev`, keep a checkout
 and use its `./grepleaks` / `.\grepleaks.cmd` launcher instead.
 
+## Update
+
+`grepleaks --version` reports the installed release. To update to the latest
+published sources, rerun the same install command you used, for example:
+
+```bash
+(set -o pipefail; curl -fsSL https://raw.githubusercontent.com/grepleaks/grepleaks/main/scripts/install.py | python3 - --repository grepleaks/grepleaks) && export PATH="$HOME/.local/bin:$PATH"
+```
+
+The image rebuild reuses Docker's cache, so updates are much faster than the
+first install. To stay on a fixed release, replace `main` with the tag (for
+example `v0.1.0`) in both places, and only rerun the command when you want that
+release. Your model connections, sessions and engagement files are preserved:
+they live in `~/.grepleaks/state` and your workspace folder, not in the image.
+
 ### Download and install in one command
 
 macOS/Linux (Bash/Zsh):
