@@ -48,25 +48,23 @@ and use its `./grepleaks` / `.\grepleaks.cmd` launcher instead.
 
 ### Download and install in one command
 
-These are publication templates: replace **OWNER/REPO** with the actual public
-GitHub repository. They will work only after that repository has been published.
-Use a release tag or commit instead of `main` to pin a version (in both places).
-
 macOS/Linux (Bash/Zsh):
 
 ```bash
-(set -o pipefail; curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/scripts/install.py | python3 - --repository OWNER/REPO) && export PATH="$HOME/.local/bin:$PATH"
+(set -o pipefail; curl -fsSL https://raw.githubusercontent.com/grepleaks/grepleaks/main/scripts/install.py | python3 - --repository grepleaks/grepleaks) && export PATH="$HOME/.local/bin:$PATH"
 ```
 
 Windows PowerShell:
 
 ```powershell
-& ([scriptblock]::Create((Invoke-RestMethod https://raw.githubusercontent.com/OWNER/REPO/main/install.ps1))) -Repository OWNER/REPO
+& ([scriptblock]::Create((Invoke-RestMethod https://raw.githubusercontent.com/grepleaks/grepleaks/main/install.ps1))) -Repository grepleaks/grepleaks
 ```
 
 Both install from the repository and build locally; no prebuilt registry image is
 required. Docker and Python must already be installed. You can download and inspect
 the installer before running it instead of executing the download directly.
+To pin a version, replace `main` with a release tag or commit in both places of
+the command.
 
 ### Uninstall
 

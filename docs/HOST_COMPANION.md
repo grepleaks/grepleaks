@@ -88,5 +88,6 @@ tested on macOS with Colima using a temporary local model stub. Run
 `python3 scripts/smoke-container.py` to repeat that integration test.
 
 Native Windows and complete pairing on a native Linux host remain to be validated
-in those environments. The three-OS CI matrix is prepared but has not run on GitHub.
-Treat the companion as preview until those checks pass.
+in those environments. The three-OS CI matrix runs on every push and pull request;
+the container job is a manual workflow dispatch. Treat the companion as preview
+until native Windows/Linux checks pass.

@@ -30,10 +30,11 @@ or remove it from existing Git history, old archives, caches or Docker layers.
 
 ## Supported distribution
 
-Security checks target the Grepleaks source/container launcher. Upstream desktop,
-web, cloud and release infrastructure retained under `engine/` are not deployed or
-supported as Grepleaks services by this repository. No guarantee of complete
-vulnerability detection or safe model behavior is made.
+Security checks target the Grepleaks source/container launcher. The repository
+contains only the packages the terminal product installs; upstream desktop, web
+and cloud products are not part of this tree and are not deployed or supported
+as Grepleaks services. No guarantee of complete vulnerability detection or safe
+model behavior is made.
 
 ## Host companion preview
 
