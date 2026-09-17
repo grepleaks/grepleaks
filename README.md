@@ -113,7 +113,6 @@ only the host launcher and license notices; the engine lives in the Docker image
 
 On first launch, the TUI opens **Models**:
 
-- **Grepleaks AI** — configure your Grepleaks API key and gateway URL.
 - **+ Add model** — connect your own OpenAI-compatible provider.
 
 Enter the provider's API base URL, exact model ID and API key directly in the TUI.

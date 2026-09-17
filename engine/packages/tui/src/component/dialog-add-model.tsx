@@ -18,22 +18,20 @@ export function useModelSetup() {
   const { theme } = useTheme()
   const [busy, setBusy] = createSignal(false)
   return async (props: { providerID?: string; modelID?: string } = {}) => {
-    const managed = props.providerID === "grepleaks"
     const existing = props.providerID ? sync.data.config.provider?.[props.providerID] : undefined
     const values = {
       name: existing?.name || "",
-      url: String(existing?.options?.baseURL || (managed ? process.env.GREPLEAKS_API_URL : "") || ""),
+      url: String(existing?.options?.baseURL || ""),
       model: props.modelID || "",
       key: "",
     }
-    const fields = managed ? (["url", "key"] as const) : (["name", "url", "model", "key"] as const)
+    const fields = ["name", "url", "model", "key"] as const
     for (const [index, field] of fields.entries()) {
-      if (managed && field === "url" && modelEndpoint(values.url)) continue
       let error = ""
       while (true) {
         const value = await DialogPrompt.show(
           dialog,
-          `${managed ? "Configure Grepleaks" : "Add model"} · ${index + 1}/${fields.length}`,
+          `Add model · ${index + 1}/${fields.length}`,
           {
             placeholder: {
               name: "Display name",
@@ -73,7 +71,7 @@ export function useModelSetup() {
     }
     setBusy(true)
     const providerID = props.providerID || `grepleaks-custom-${crypto.randomUUID()}`
-    const modelID = managed ? props.modelID || "basilisk-1" : values.model
+    const modelID = props.modelID || values.model
     try {
       // Secrets use the engine credential store, never the public configuration or chat history.
       await sdk.client.auth.set({ providerID, auth: { type: "api", key: values.key } }, { throwOnError: true })
@@ -84,9 +82,9 @@ export function useModelSetup() {
             provider: {
               [providerID]: {
                 npm: "@ai-sdk/openai-compatible",
-                name: managed ? "Grepleaks" : values.name,
+                name: values.name,
                 options: { baseURL: values.url },
-                models: { [modelID]: { name: managed ? "Grepleaks AI" : values.name } },
+                models: { [modelID]: { name: values.name } },
               },
             },
           },

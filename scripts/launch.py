@@ -119,7 +119,6 @@ def main():
                 return 1
             thread = threading.Thread(target=worker, args=(f"http://127.0.0.1:{port}", env["GREPLEAKS_HOST_TOKEN"], Path(args.workspace or Path.cwd()).resolve(), stop, args.exchange), daemon=True)
             thread.start()
-            print("Grepleaks: host companion paired for this session. Host actions appear in permission prompts.", file=sys.stderr)
         return child.wait()
     except KeyboardInterrupt:
         return 130

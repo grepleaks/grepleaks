@@ -18,22 +18,12 @@ export function DialogModel(_props: { providerID?: string }) {
   const addModel = useModelSetup()
   const models = createMemo(() => configuredModels(sync.data.config, sync.data.provider))
   const options = createMemo(() => {
-    const grepleaks = models().find((model) => model.providerID === "grepleaks")
     return [
       {
         title: "+ Add model",
         value: "add",
         description: "Connect your own API",
         onSelect: () => addModel(),
-      },
-      {
-        title: "Grepleaks AI",
-        value: "grepleaks",
-        description: grepleaks?.available ? "Configured" : "Configure API key",
-        onSelect: () => {
-          if (!grepleaks?.available) return addModel({ providerID: "grepleaks", modelID: grepleaks?.modelID })
-          return select(grepleaks.providerID, grepleaks.modelID)
-        },
       },
       ...models()
         .filter((model) => model.providerID !== "grepleaks")
@@ -71,11 +61,8 @@ export function DialogModel(_props: { providerID?: string }) {
           title: "Configure",
           onTrigger(option) {
             if (option.value === "add") return addModel()
-            const model =
-              option.value === "grepleaks"
-                ? models().find((item) => item.providerID === "grepleaks")
-                : models().find((item) => `${item.providerID}/${item.modelID}` === option.value)
-            addModel({ providerID: model?.providerID || "grepleaks", modelID: model?.modelID })
+            const model = models().find((item) => `${item.providerID}/${item.modelID}` === option.value)
+            addModel({ providerID: model?.providerID, modelID: model?.modelID })
           },
         },
       ]}

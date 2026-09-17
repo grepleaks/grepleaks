@@ -98,12 +98,10 @@ docker build -f docker/Dockerfile -t grepleaks:local .
 ```
 
 Run `./grepleaks` (or `grepleaks` after installation). On first launch the TUI
-opens **Models**. Choose **Grepleaks AI** or **+ Add model** to connect an
-OpenAI-compatible API with its display name, base URL, exact model ID and API key.
-Use `/models` to switch models later. The **Configure** action edits the selected
-connection. Grepleaks AI remains available in the list even before it is connected.
-For Grepleaks, `GREPLEAKS_API_URL` supplies the default endpoint; otherwise the TUI
-asks for it. No public gateway address is assumed.
+opens **Models**. Choose **+ Add model** to connect an OpenAI-compatible API with
+its display name, base URL, exact model ID and API key. Use `/models` to switch
+models later. The **Configure** action edits the selected connection. Pick a
+model that supports tool calling; see the provider recommendations in the README.
 
 Settings, credentials, selected model and sessions persist in `~/.grepleaks/state`
 (`%USERPROFILE%\.grepleaks\state` on Windows), mounted at `/var/lib/grepleaks`.
@@ -141,8 +139,7 @@ random marker inside the temporary workspace.
 It verifies the permission gate before approving that test command, then removes
 its container and temporary workspace.
 
-A managed gateway is optional and requires both `GREPLEAKS_API_KEY` and an explicit
-`GREPLEAKS_API_URL`. This project does not provision or promise a hosted gateway.
+Grepleaks is bring-your-own-key: there is no hosted model service.
 `OPENCODE_CONFIG_CONTENT` accepts an advanced JSON object; it is an explicit override
 and may alter the default permission policy. Never share configuration containing
 real credentials.

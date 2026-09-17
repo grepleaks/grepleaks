@@ -26,7 +26,7 @@ export function configuredModels(
     Object.entries(definition.models ?? {}).map(([modelID, model]) => ({
       providerID,
       modelID,
-      name: providerID === "grepleaks" ? "Grepleaks AI" : model.name || modelID,
+      name: model.name || modelID,
       providerName: definition.name || providerID,
       available: providers.some(
         (provider) =>
