@@ -129,17 +129,17 @@ require a build. Source development with `--dev` uses `./grepleaks` in a checkou
 Grepleaks is **bring your own key**: you connect an OpenAI-compatible provider and
 pay it directly. Nothing runs through a Grepleaks service.
 
-For pentest work, prefer an **uncensored or abliterated model**. Standard aligned
+For pentest work, prefer an **unrestricted model**. Standard aligned
 models frequently refuse legitimate, authorized security tasks — reconnaissance,
 exploit development, payload analysis — which stops the agent mid-engagement.
-An abliterated model keeps the capabilities while behaving on authorized work.
+An unrestricted model keeps the capabilities while behaving on authorized work.
 
 Providers we recommend:
 
 | Provider | Why |
 | :--- | :--- |
-| **[abliteration.ai](https://abliteration.ai/)** | Hosted abliterated models plus a policy gateway (allow / refuse / rewrite / redact) built for red teams. OpenAI and Anthropic compatible. |
-| **[nano-gpt.com](https://nano-gpt.com/)** | Large catalog with many uncensored models, pay-as-you-go. OpenAI compatible. |
+| **[abliteration.ai](https://abliteration.ai/)** | Hosted unrestricted models plus a policy gateway (allow / refuse / rewrite / redact) built for red teams. OpenAI and Anthropic compatible. |
+| **[nano-gpt.com](https://nano-gpt.com/)** | Large catalog with many unrestricted models, pay-as-you-go. OpenAI compatible. |
 | **[routeway.ai](https://routeway.ai/)** | 100+ models through one key, states that prompts are not logged. OpenAI compatible. |
 
 Any other OpenAI-compatible provider works too — pick a model that supports
