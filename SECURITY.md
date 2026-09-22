@@ -8,8 +8,11 @@ read-write can damage those files; it is not a protective boundary for them.
 
 Never commit API keys, provider authentication, session databases, engagement data
 or private reports. `.env.example` contains names only. Keep secrets in environment
-variables or your own secret manager. The selected model provider may receive
-prompts, file contents and tool outputs. Review that provider's data handling.
+variables or your own secret manager. Prompts, file contents and tool output are
+sent to the model that runs your session: with your own provider key they go
+directly to that provider, and with the Grepleaks key they pass through Grepleaks
+to our partner abliteration.ai. Review that provider's data handling before
+working with sensitive material.
 
 ## Reporting a vulnerability
 

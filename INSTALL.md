@@ -9,7 +9,9 @@
   runtime and engine dependencies). Check `docker system df` and available
   host/VM disk space.
 - Internet access for image construction, provider calls and on-demand tool installs.
-- An API key, base URL and model ID from your OpenAI-compatible provider.
+- A way to run the model: the **Grepleaks key** (early access, one key for the
+  unrestricted models served by our partner abliteration.ai), or an API key, base
+  URL and model ID from your own OpenAI-compatible provider.
 
 On macOS use Docker Desktop or Colima. On Linux use Docker Engine or Docker Desktop.
 On Windows use Docker Desktop and `grepleaks.cmd` from cmd/PowerShell. WSL2 can also
@@ -98,10 +100,13 @@ docker build -f docker/Dockerfile -t grepleaks:local .
 ```
 
 Run `./grepleaks` (or `grepleaks` after installation). On first launch the TUI
-opens **Models**. Choose **+ Add model** to connect an OpenAI-compatible API with
-its display name, base URL, exact model ID and API key. Use `/models` to switch
-models later. The **Configure** action edits the selected connection. Pick a
-model that supports tool calling; see the provider recommendations in the README.
+opens **Models**. Choose the **Grepleaks key** (early access: one key for the
+unrestricted models served by our partner abliteration.ai, switchable between the
+three models from `/models`) or **+ Add model** to connect your own
+OpenAI-compatible API with its display name, base URL, exact model ID and API
+key. Use `/models` to switch models later. The **Configure** action edits the
+selected connection. Pick a model that supports tool calling; see the provider
+recommendations in the README.
 
 Settings, credentials, selected model and sessions persist in `~/.grepleaks/state`
 (`%USERPROFILE%\.grepleaks\state` on Windows), mounted at `/var/lib/grepleaks`.
@@ -139,10 +144,12 @@ random marker inside the temporary workspace.
 It verifies the permission gate before approving that test command, then removes
 its container and temporary workspace.
 
-Grepleaks is bring-your-own-key: there is no hosted model service.
-`OPENCODE_CONFIG_CONTENT` accepts an advanced JSON object; it is an explicit override
-and may alter the default permission policy. Never share configuration containing
-real credentials.
+Grepleaks runs local-first. You can use the **Grepleaks key** (early access, one
+key for the unrestricted models served by our partner abliteration.ai) or bring
+your own OpenAI-compatible key; either way the agent runs in your local container.
+`OPENCODE_CONFIG_CONTENT` accepts an advanced JSON object; it is an explicit
+override and may alter the default permission policy. Never share configuration
+containing real credentials.
 
 ## Host companion
 

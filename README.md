@@ -11,7 +11,7 @@
 
 <p align="center">
   <strong>An AI pentest agent that lives in your terminal.</strong><br />
-  Bring your model. Describe your task. Work with a Linux toolbox.
+  One key to unrestricted models, or bring your own. Describe your task. Work with a Linux toolbox.
 </p>
 
 <p align="center">
@@ -46,7 +46,7 @@ interactive tool cards and pentest-oriented prompt suggestions.
 | **A terminal workspace** | Chat, tool output and a browsable catalog in a TUI built for security work. |
 | **Pentest Tools** | Search the catalog and open tool descriptions before deciding what to use. A catalog entry does not mean the tool is installed. |
 | **Tools on demand** | A core toolkit comes with the image. The agent can install additional compatible tools inside the container when needed. |
-| **Your model provider** | Connect an OpenAI-compatible API using your own endpoint, model ID and key. |
+| **Your model** | Start with the **Grepleaks key** — unrestricted models from our partner abliteration.ai — or connect any OpenAI-compatible API with your own endpoint, model ID and key. |
 | **Actions you can review** | The default policy asks for permission for actions such as command execution; some operations, including reading files, are allowed. |
 | **A built-in host companion** | Request commands on your actual Mac, Windows or Linux machine when the task needs access beyond the container. |
 
@@ -113,6 +113,9 @@ only the host launcher and license notices; the engine lives in the Docker image
 
 On first launch, the TUI opens **Models**:
 
+- **Grepleaks key** — one key for the unrestricted models served by our partner
+  abliteration.ai. Paste it once and switch between the three models from
+  **`/models`**. **Early access**: rolling out.
 - **+ Add model** — connect your own OpenAI-compatible provider.
 
 Enter the provider's API base URL, exact model ID and API key directly in the TUI.
@@ -126,19 +129,31 @@ require a build. Source development with `--dev` uses `./grepleaks` in a checkou
 
 ### Which model to use
 
-Grepleaks is **bring your own key**: you connect an OpenAI-compatible provider and
-pay it directly. Nothing runs through a Grepleaks service.
+The fastest path is the **Grepleaks key**: one key that gives you the unrestricted
+reasoning models served by our partner
+[abliteration.ai](https://abliteration.ai/). Paste it once and switch between the
+models from **`/models`** in the TUI.
 
-For pentest work, prefer an **unrestricted model**. Standard aligned
-models frequently refuse legitimate, authorized security tasks — reconnaissance,
-exploit development, payload analysis — which stops the agent mid-engagement.
-An unrestricted model keeps the capabilities while behaving on authorized work.
+| Model | Best for |
+| :--- | :--- |
+| **`abliterated-model-large-v2`** | Default large model. GLM-5.3, 1M context, reasoning low / high / max. |
+| **`abliterated-model-large`** | Large model. GLM-5.2, 1M context. |
+| **`abliterated-model`** | General purpose. Multimodal, 256K context. |
+
+All three are unrestricted and support tool calling, which the agent needs to
+drive its tools. The Grepleaks key is in **early access**; until it reaches your
+account, use your own provider.
+
+**Bring your own key.** Grepleaks also connects to any OpenAI-compatible provider
+with your own endpoint, model ID and key, and you pay that provider directly. For
+pentest work, prefer an **unrestricted model**: standard aligned models frequently
+refuse legitimate, authorized security tasks — reconnaissance, exploit development,
+payload analysis — which stops the agent mid-engagement.
 
 Providers we recommend:
 
 | Provider | Why |
 | :--- | :--- |
-| **[abliteration.ai](https://abliteration.ai/)** | Hosted unrestricted models plus a policy gateway (allow / refuse / rewrite / redact) built for red teams. OpenAI and Anthropic compatible. |
 | **[nano-gpt.com](https://nano-gpt.com/)** | Large catalog with many unrestricted models, pay-as-you-go. OpenAI compatible. |
 | **[routeway.ai](https://routeway.ai/)** | 100+ models through one key, states that prompts are not logged. OpenAI compatible. |
 
@@ -291,9 +306,11 @@ More detail, including authenticated headless API mode: [INSTALL.md](INSTALL.md)
 | [Contributing](CONTRIBUTING.md) | Local development, tests and contribution conventions. |
 | [Licensing](docs/LICENSING.md) | Permitted professional use, sharing and the no-resale restriction. |
 
-Use Grepleaks only on systems you own or are authorized to test. Your selected
-model provider may receive prompts, file contents and tool output. Review its
-handling of data before working with sensitive material.
+Use Grepleaks only on systems you own or are authorized to test. Prompts, file
+contents and tool output go to the model that runs your session: with the
+Grepleaks key, through Grepleaks to our partner abliteration.ai; with your own
+key, directly to the provider you configure. Review that provider's handling of
+data before working with sensitive material.
 
 ## License and attribution
 
