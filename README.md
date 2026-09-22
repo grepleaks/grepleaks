@@ -115,7 +115,7 @@ On first launch, the TUI opens **Models**:
 
 - **Grepleaks key** — one key for the unrestricted models served by our partner
   abliteration.ai. Paste it once and switch between the three models from
-  **`/models`**. **Early access**: rolling out.
+  **`/models`**.
 - **+ Add model** — connect your own OpenAI-compatible provider.
 
 Enter the provider's API base URL, exact model ID and API key directly in the TUI.
@@ -141,8 +141,8 @@ models from **`/models`** in the TUI.
 | **`abliterated-model`** | General purpose. Multimodal, 256K context. |
 
 All three are unrestricted and support tool calling, which the agent needs to
-drive its tools. The Grepleaks key is in **early access**; until it reaches your
-account, use your own provider.
+drive its tools. The Grepleaks key is issued from your Grepleaks console; you can
+also connect your own provider.
 
 **Bring your own key.** Grepleaks also connects to any OpenAI-compatible provider
 with your own endpoint, model ID and key, and you pay that provider directly. For
