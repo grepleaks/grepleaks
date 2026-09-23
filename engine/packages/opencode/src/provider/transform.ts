@@ -979,6 +979,18 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
     case "venice-ai-sdk-provider":
     // https://docs.venice.ai/overview/guides/reasoning-models#reasoning-effort
     case "@ai-sdk/openai-compatible":
+      // Grepleaks managed models: expose the reasoning tiers the upstream
+      // (abliteration.ai) actually honours per model, so the "Switch model
+      // variant" command offers the right low/high/max choices.
+      if (model.providerID === "grepleaks") {
+        const grepleaksId = model.api.id.toLowerCase()
+        const grepleaksEfforts = grepleaksId.includes("large-v2")
+          ? ["low", "high", "max"]
+          : grepleaksId.includes("large")
+            ? ["high", "max"]
+            : ["low", "medium", "high", "max"]
+        return Object.fromEntries(grepleaksEfforts.map((effort) => [effort, { reasoningEffort: effort }]))
+      }
       if (model.api.id.toLowerCase().includes("north-mini-code")) {
         return Object.fromEntries(["none", "high"].map((effort) => [effort, { reasoningEffort: effort }]))
       }

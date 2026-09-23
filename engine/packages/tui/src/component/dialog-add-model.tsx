@@ -12,10 +12,10 @@ import { DialogModel } from "./dialog-model"
 export const GREPLEAKS_PROVIDER_ID = "grepleaks"
 export const GREPLEAKS_BASE_URL = "https://grepleaks.com/v1"
 export const GREPLEAKS_DEFAULT_MODEL = "abliterated-model-large-v2"
-export const GREPLEAKS_MODELS: Record<string, { name: string }> = {
-  "abliterated-model-large-v2": { name: "Abliterated Large V2" },
-  "abliterated-model-large": { name: "Abliterated Large" },
-  "abliterated-model": { name: "Abliterated Model" },
+export const GREPLEAKS_MODELS: Record<string, { name: string; reasoning: boolean; tool_call: boolean }> = {
+  "abliterated-model-large-v2": { name: "Abliterated Large V2", reasoning: true, tool_call: true },
+  "abliterated-model-large": { name: "Abliterated Large", reasoning: true, tool_call: true },
+  "abliterated-model": { name: "Abliterated Model", reasoning: true, tool_call: true },
 }
 
 export function useModelSetup() {
