@@ -32,16 +32,21 @@ export function DialogModel(_props: { providerID?: string }) {
         description: grepleaks?.available ? "Configured. Update the key." : "Add your Grepleaks key",
         onSelect: () => addModel({ providerID: "grepleaks" }),
       },
-      ...models().map((model) => ({
-        title: model.name,
-        value: `${model.providerID}/${model.modelID}`,
-        description: model.modelID,
-        footer: model.available ? undefined : "Configure",
-        onSelect: () =>
-          model.available
-            ? select(model.providerID, model.modelID)
-            : addModel({ providerID: model.providerID, modelID: model.modelID }),
-      })),
+      ...models().map((model) => {
+        // Show the provider name on the left for the managed Grepleaks models
+        // (all three share one provider), and the model name beside it.
+        const managed = model.providerID === "grepleaks"
+        return {
+          title: managed ? model.providerName : model.name,
+          value: `${model.providerID}/${model.modelID}`,
+          description: managed ? model.name : model.modelID,
+          footer: model.available ? undefined : "Configure",
+          onSelect: () =>
+            model.available
+              ? select(model.providerID, model.modelID)
+              : addModel({ providerID: model.providerID, modelID: model.modelID }),
+        }
+      }),
     ]
   })
 
