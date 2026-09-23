@@ -29,24 +29,19 @@ export function DialogModel(_props: { providerID?: string }) {
       {
         title: "Grepleaks key",
         value: "grepleaks",
-        description: grepleaks?.available ? "Managed unrestricted models" : "Add your Grepleaks key",
-        onSelect: () => {
-          if (!grepleaks?.available) return addModel({ providerID: "grepleaks" })
-          return select(grepleaks.providerID, grepleaks.modelID)
-        },
+        description: grepleaks?.available ? "Configured. Update the key." : "Add your Grepleaks key",
+        onSelect: () => addModel({ providerID: "grepleaks" }),
       },
-      ...models()
-        .filter((model) => model.providerID !== "grepleaks")
-        .map((model) => ({
-          title: model.name,
-          value: `${model.providerID}/${model.modelID}`,
-          description: model.modelID,
-          footer: model.available ? undefined : "Configure",
-          onSelect: () =>
-            model.available
-              ? select(model.providerID, model.modelID)
-              : addModel({ providerID: model.providerID, modelID: model.modelID }),
-        })),
+      ...models().map((model) => ({
+        title: model.name,
+        value: `${model.providerID}/${model.modelID}`,
+        description: model.modelID,
+        footer: model.available ? undefined : "Configure",
+        onSelect: () =>
+          model.available
+            ? select(model.providerID, model.modelID)
+            : addModel({ providerID: model.providerID, modelID: model.modelID }),
+      })),
     ]
   })
 
