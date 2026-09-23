@@ -138,7 +138,7 @@
   <!-- title bar -->
   <g>
     <circle cx="26" cy="17" r="5" fill="#ff5f57"/><circle cx="44" cy="17" r="5" fill="#febc2e"/><circle cx="62" cy="17" r="5" fill="#28c840"/>
-    <text x="440.0" y="21" text-anchor="middle" font-size="11" class="t-mut">grepleaks — /engagement</text>
+    <text x="440.0" y="21" text-anchor="middle" font-size="11" class="t-mut">grepleaks - /engagement</text>
     <line x1="1" y1="34" x2="879" y2="34" stroke="#101d21"/>
   </g>
 

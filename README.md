@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/grepleaks-tui-demo.svg" alt="Grepleaks TUI — 120+ pentest skills, 900+ pentest tools. The composer cycles the built-in pentest prompts, then a recon engagement runs end to end and writes a report under /engagement" width="880" />
+  <img src="docs/assets/grepleaks-tui-demo.svg" alt="Grepleaks TUI: 120+ pentest skills, 900+ pentest tools. The composer cycles the built-in pentest prompts, then a recon engagement runs end to end and writes a report under /engagement" width="880" />
 </p>
 
 <p align="center">
@@ -46,7 +46,7 @@ interactive tool cards and pentest-oriented prompt suggestions.
 | **A terminal workspace** | Chat, tool output and a browsable catalog in a TUI built for security work. |
 | **Pentest Tools** | Search the catalog and open tool descriptions before deciding what to use. A catalog entry does not mean the tool is installed. |
 | **Tools on demand** | A core toolkit comes with the image. The agent can install additional compatible tools inside the container when needed. |
-| **Your model** | Start with the **Grepleaks key** — unrestricted models from our partner abliteration.ai — or connect any OpenAI-compatible API with your own endpoint, model ID and key. |
+| **Your model** | Start with the **Grepleaks key** (unrestricted models from our partner abliteration.ai), or connect any OpenAI-compatible API with your own endpoint, model ID and key. |
 | **Actions you can review** | The default policy asks for permission for actions such as command execution; some operations, including reading files, are allowed. |
 | **A built-in host companion** | Request commands on your actual Mac, Windows or Linux machine when the task needs access beyond the container. |
 
@@ -87,7 +87,7 @@ python3 scripts/install.py --source . && export PATH="$HOME/.local/bin:$PATH"
 ```
 
 <details>
-<summary><strong>Windows — PowerShell</strong></summary>
+<summary><strong>Windows: PowerShell</strong></summary>
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\install.ps1
@@ -113,10 +113,10 @@ only the host launcher and license notices; the engine lives in the Docker image
 
 On first launch, the TUI opens **Models**:
 
-- **Grepleaks key** — one key for the unrestricted models served by our partner
+- **Grepleaks key**: one key for the unrestricted models served by our partner
   abliteration.ai. Paste it once and switch between the three models from
   **`/models`**.
-- **+ Add model** — connect your own OpenAI-compatible provider.
+- **+ Add model**: connect your own OpenAI-compatible provider.
 
 Enter the provider's API base URL, exact model ID and API key directly in the TUI.
 Key input is hidden. Connections and your selected model are saved in your private
@@ -147,19 +147,10 @@ also connect your own provider.
 **Bring your own key.** Grepleaks also connects to any OpenAI-compatible provider
 with your own endpoint, model ID and key, and you pay that provider directly. For
 pentest work, prefer an **unrestricted model**: standard aligned models frequently
-refuse legitimate, authorized security tasks — reconnaissance, exploit development,
-payload analysis — which stops the agent mid-engagement.
-
-Providers we recommend:
-
-| Provider | Why |
-| :--- | :--- |
-| **[nano-gpt.com](https://nano-gpt.com/)** | Large catalog with many unrestricted models, pay-as-you-go. OpenAI compatible. |
-| **[routeway.ai](https://routeway.ai/)** | 100+ models through one key, states that prompts are not logged. OpenAI compatible. |
-
-Any other OpenAI-compatible provider works too — pick a model that supports
-**tool calling**, since the agent drives tools through it. Set the base URL, the
-exact model ID and the key in the TUI (**Models** on first launch).
+refuse legitimate, authorized security tasks such as reconnaissance, exploit
+development and payload analysis, which stops the agent mid-engagement. Any
+OpenAI-compatible provider works, as long as the model supports **tool calling**
+since the agent drives tools through it.
 
 <details>
 <summary><strong>Already have your provider settings in environment variables?</strong></summary>
