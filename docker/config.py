@@ -40,8 +40,8 @@ def configuration(env):
     result = {
         "$schema": "https://opencode.ai/config.json",
         "model": f"{provider}/{model}",
-        # Bound the live context: compact near this budget and prune old tool
-        # output, instead of resending an ever-growing history every turn.
+        # Prune old tool output after each turn so the history does not grow
+        # unbounded and get resent on every message.
         "compaction": {"auto": True, "prune": True},
         # Override the provider's coding-assistant persona for the main agent.
         # Detailed operational instructions remain in the shared instructions file.
@@ -50,7 +50,7 @@ def configuration(env):
             "npm": "@ai-sdk/openai-compatible",
             "name": "Grepleaks" if managed else env.get("BYOK_PROVIDER_NAME", "BYOK"),
             "options": {"baseURL": endpoint, "apiKey": "{env:" + prefix + "_API_KEY}"},
-            "models": {model: {"name": model, "limit": {"context": 200000, "output": 32000}}},
+            "models": {model: {"name": model}},
         }},
         "permission": {"*": "ask", "read": "allow", "glob": "allow", "grep": "allow", "list": "allow", "skill": "allow", "question": "allow"},
         "skills": {"paths": ["/opt/grepleaks/skills"]},
