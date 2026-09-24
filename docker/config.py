@@ -50,7 +50,7 @@ def configuration(env):
             "npm": "@ai-sdk/openai-compatible",
             "name": "Grepleaks" if managed else env.get("BYOK_PROVIDER_NAME", "BYOK"),
             "options": {"baseURL": endpoint, "apiKey": "{env:" + prefix + "_API_KEY}"},
-            "models": {model: {"name": model, "limit": {"context": 200000}}},
+            "models": {model: {"name": model, "limit": {"context": 200000, "output": 32000}}},
         }},
         "permission": {"*": "ask", "read": "allow", "glob": "allow", "grep": "allow", "list": "allow", "skill": "allow", "question": "allow"},
         "skills": {"paths": ["/opt/grepleaks/skills"]},
