@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/grepleaks/grepleaks/security/advisories/new
+    about: Report it privately; do not open a public issue.
+  - name: Installation and usage guide
+    url: https://github.com/grepleaks/grepleaks/blob/main/INSTALL.md
+    about: Setup, providers, updates and troubleshooting.
+  - name: Documentation
+    url: https://grepleaks.com/docs
+    about: Model, pricing and security documentation.

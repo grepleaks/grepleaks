@@ -1,0 +1,55 @@
+name: Bug report
+description: Something in Grepleaks does not work as documented.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not paste API keys, session databases, engagement files or private report
+        contents. Security issues belong in the private advisory flow, not here.
+  - type: input
+    id: version
+    attributes:
+      label: Grepleaks version
+      description: Output of `grepleaks --version`.
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Host and Docker
+      description: Operating system and `docker version` output.
+      placeholder: macOS 15.3, Docker 27.4.0
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: What you did
+      description: The shortest sequence that reproduces the problem, including the prompt or command.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened instead
+      description: Include the error text or a screenshot of the terminal.
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: Model access
+      options:
+        - Grepleaks key
+        - Own OpenAI-compatible provider
+        - Not sure
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant log lines
+      description: Optional. `~/.grepleaks/state/update.log` for update problems.
+    validations:
+      required: false
