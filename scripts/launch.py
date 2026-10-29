@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 """Cross-platform launcher. The host companion is opt-in via --host-bridge."""
 import argparse
+from datetime import datetime, timezone
+import json
 import os
+import re
 from pathlib import Path
 import secrets
 import signal
 import sqlite3
 import subprocess
 import sys
+import ssl
 import threading
 import time
+import urllib.error
+import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "host"))
@@ -54,6 +60,156 @@ def acquire_state_lock(state):
         ) from None
     _state_lock = handle
     return handle
+
+
+UPDATE_DAYS_DEFAULT = 7
+UPDATE_RETRY_SECONDS = 24 * 3600
+
+
+def image_name(env):
+    return env.get("GREPLEAKS_IMAGE", "grepleaks:local")
+
+
+def image_label(image, key):
+    probe = subprocess.run(
+        ["docker", "image", "inspect", image, "--format", '{{index .Config.Labels "' + key + '"}}'],
+        text=True, capture_output=True,
+    )
+    if probe.returncode != 0:
+        return None
+    raw = probe.stdout.strip()
+    if not raw or raw == "<no value>":
+        return None
+    return raw
+
+
+def image_age_days(image):
+    """Days since the image was built, or None when it carries no build date."""
+    raw = image_label(image, "org.grepleaks.built")
+    if raw is None:
+        return None
+    try:
+        built = datetime.strptime(raw, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+    except ValueError:
+        return None
+    return max(0.0, (datetime.now(timezone.utc) - built).total_seconds() / 86400)
+
+
+def ssl_contexts():
+    """Default context first, then an explicit CA bundle: some macOS Python
+    builds ship without a configured certificate store."""
+    yield None
+    bundles = []
+    try:
+        import certifi
+        bundles.append(certifi.where())
+    except ImportError:
+        pass
+    bundles += ["/etc/ssl/cert.pem", "/etc/ssl/certs/ca-certificates.crt"]
+    for bundle in bundles:
+        if os.path.isfile(bundle):
+            yield ssl.create_default_context(cafile=bundle)
+
+
+def latest_release(repository, timeout=8):
+    """Newest published tag, so an update lands on a release and not on main."""
+    request = urllib.request.Request(
+        f"https://api.github.com/repos/{repository}/releases/latest",
+        headers={"Accept": "application/vnd.github+json", "User-Agent": "grepleaks-launcher"},
+    )
+    payload = None
+    for context in ssl_contexts():
+        try:
+            with urllib.request.urlopen(request, timeout=timeout, context=context) as response:
+                payload = json.load(response)
+            break
+        except urllib.error.URLError as error:
+            if not isinstance(getattr(error, "reason", None), ssl.SSLCertVerificationError):
+                raise
+    if payload is None:
+        raise ValueError("Release lookup failed")
+    tag = payload.get("tag_name")
+    if not isinstance(tag, str) or not re.fullmatch(r"[\w./-]+", tag):
+        raise ValueError("Unexpected release tag")
+    return tag
+
+
+def update_command(ref=None):
+    """Only the installer can rebuild the image: the build context is not kept in
+    the installed runtime, so the installer fetches the source and rebuilds."""
+    installer = ROOT / "scripts" / "install.py"
+    if not installer.is_file():
+        raise ValueError("This installation has no installer; reinstall Grepleaks to update it")
+    repository = os.environ.get("GREPLEAKS_UPDATE_REPOSITORY", "grepleaks/grepleaks")
+    if ref is None:
+        ref = os.environ.get("GREPLEAKS_UPDATE_REF", "").strip()
+        if not ref:
+            try:
+                ref = latest_release(repository)
+            except Exception:
+                ref = "main"
+    return [sys.executable, str(installer), "--repository", repository, "--ref", ref]
+
+
+def run_update():
+    try:
+        command_line = update_command()
+    except ValueError as error:
+        print(f"Grepleaks: {error}", file=sys.stderr)
+        return 1
+    ref = command_line[command_line.index("--ref") + 1]
+    print(f"Grepleaks: updating to {ref} and rebuilding the tool image…", file=sys.stderr, flush=True)
+    return subprocess.call(command_line, cwd=str(ROOT), env=dict(os.environ))
+
+
+def refresh_in_background(state, env):
+    """Rebuild the image when it is past the configured age.
+
+    This session keeps the image it started with; the next launch uses the new
+    one. A failed rebuild is retried at most once a day.
+    """
+    if env.get("GREPLEAKS_AUTO_UPDATE", "1") == "0":
+        return
+    try:
+        days = float(env.get("GREPLEAKS_UPDATE_DAYS", UPDATE_DAYS_DEFAULT))
+    except ValueError:
+        days = UPDATE_DAYS_DEFAULT
+    age = image_age_days(image_name(env))
+    if age is None or age < days:
+        return
+    marker = state / ".update-attempt"
+    try:
+        if marker.exists() and time.time() - marker.stat().st_mtime < UPDATE_RETRY_SECONDS:
+            return
+        marker.touch()
+    except OSError:
+        return
+    ref = image_label(image_name(env), "org.grepleaks.ref")
+    if not ref or ref == "source":
+        return  # built from a local checkout: never refresh it behind the user
+    try:
+        command_line = update_command(ref)
+    except ValueError:
+        return
+    log = state / "update.log"
+    stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    try:
+        with log.open("a") as handle:
+            handle.write(f"\n=== update started {stamp} ===\n")
+            handle.flush()
+            options = {"stdout": handle, "stderr": subprocess.STDOUT, "cwd": str(ROOT), "env": dict(env)}
+            if os.name == "nt":
+                options["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+            else:
+                options["start_new_session"] = True
+            subprocess.Popen(command_line, **options)
+    except OSError:
+        return
+    print(
+        f"Grepleaks: the tool image is {age:.0f} days old. Updating it in the background; "
+        f"this session keeps the tools it started with.\nGrepleaks: progress in {log}",
+        file=sys.stderr, flush=True,
+    )
 
 
 def check_database(state):
@@ -140,6 +296,7 @@ def main():
     parser.add_argument("--workspace", help="Existing directory mounted read-write at /engagement")
     parser.add_argument("--host-access", action="store_true", help="Expose home or GREPLEAKS_HOST_ROOT read-write at /host")
     parser.add_argument("--repair-db", action="store_true", help="Back up and rebuild the session database")
+    parser.add_argument("--update", action="store_true", help="Rebuild the tool image with the latest tools, then exit")
     bridge = parser.add_mutually_exclusive_group()
     bridge.add_argument("--host-bridge", dest="host_bridge", action="store_true", help="Enable the host companion: commands on the real host, after approval")
     bridge.add_argument("--no-host-bridge", dest="host_bridge", action="store_false", help="Disable the host companion (default); use the container only")
@@ -147,6 +304,9 @@ def main():
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args, forwarded = parser.parse_known_args()
     args.command = forwarded + args.command
+    if args.command == ["update"]:
+        args.update = True
+        args.command = []
     # Version queries do not execute an agent or need a companion process.
     if args.command in (["--version"], ["-v"]):
         args.host_bridge = False
@@ -157,6 +317,8 @@ def main():
     state.mkdir(mode=0o700, parents=True, exist_ok=True)
     if os.name != "nt":
         state.chmod(0o700)
+    if args.update:
+        return run_update()
     try:
         acquire_state_lock(state)
     except (ValueError, OSError) as error:
@@ -172,6 +334,8 @@ def main():
             check_database(state)
         terminal = sys.stdin.isatty() and sys.stdout.isatty()
         configure(env, terminal)
+        if args.command not in (["--version"], ["-v"]):
+            refresh_in_background(state, env)
         argv = command(args, env, terminal, state)
     except (EOFError, KeyboardInterrupt):
         print("\nGrepleaks: setup cancelled.", file=sys.stderr); return 130

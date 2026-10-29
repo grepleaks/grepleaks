@@ -127,9 +127,11 @@ Key input is hidden. Connections and your selected model are saved in your priva
 `~/.grepleaks/state` directory, outside the project. Use **`/models`** to switch
 between your saved models; the public provider catalog is not shown.
 
-**Next time, just run `grepleaks`.** Keep Docker running. To update, run the
-installer again with the new release's sources. Starting a conversation does not
-require a build. Source development with `--dev` uses `./grepleaks` in a checkout.
+**Next time, just run `grepleaks`.** Keep Docker running. The tool image refreshes
+itself in the background once it is more than seven days old, so the pentest tools
+stay current without you doing anything; `grepleaks update` moves to the newest
+release immediately (see `INSTALL.md`). Starting a conversation does not require a
+build. Source development with `--dev` uses `./grepleaks` in a checkout.
 
 ### Which model to use
 

@@ -5,6 +5,7 @@ import hashlib
 import hmac
 import os
 import ssl
+from datetime import datetime, timezone
 from pathlib import Path
 import re
 import shlex
@@ -18,8 +19,8 @@ import zipfile
 
 
 RUNTIME = (
-    "scripts/launch.py", "scripts/repair-db.py", "host/bridge.py", "host/stage.py", "docker/config.py",
-    "LICENSE", "THIRD_PARTY_NOTICES.md",
+    "scripts/launch.py", "scripts/install.py", "scripts/repair-db.py", "host/bridge.py", "host/stage.py",
+    "docker/config.py", "LICENSE", "THIRD_PARTY_NOTICES.md",
 )
 MARKER = "# Grepleaks user installation"
 
@@ -215,7 +216,12 @@ def main():
                     raise ValueError(f"Missing installation file: {name}")
             version = detect_version(source, args.repository, args.ref)
             print("Building the Grepleaks image. The first installation can take several minutes…", flush=True)
-            subprocess.run(["docker", "build", "--build-arg", f"OPENCODE_VERSION={version}",
+            built_at = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+            source_ref = "source" if args.source else args.ref
+            subprocess.run(["docker", "build", "--pull",
+                            "--build-arg", f"OPENCODE_VERSION={version}",
+                            "--build-arg", f"BUILT_AT={built_at}",
+                            "--build-arg", f"UPDATE_REF={source_ref}",
                             "-f", "docker/Dockerfile", "-t", "grepleaks:local", "."], cwd=source, check=True)
             wrapper = install(source, Path.home())
         print(f"Installed Grepleaks {version}: {wrapper}\nOpen a new terminal and run: grepleaks")

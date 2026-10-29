@@ -11,6 +11,13 @@
 
 FROM debian:stable-slim
 
+# Build date and source ref, read by the launcher to refresh the image on the
+# same ref without moving the engine.
+ARG BUILT_AT=
+ARG UPDATE_REF=
+LABEL org.grepleaks.built=$BUILT_AT
+LABEL org.grepleaks.ref=$UPDATE_REF
+
 ENV DEBIAN_FRONTEND=noninteractive \
     PATH="/usr/local/bin:/root/go/bin:/usr/local/go/bin:${PATH}" \
     GOBIN=/usr/local/bin

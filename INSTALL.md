@@ -51,9 +51,29 @@ and use its `./grepleaks` / `.\grepleaks.cmd` launcher instead.
 
 ## Update
 
-`grepleaks --version` reports the installed release. To update, download the
-release tarball and its `SHA256SUMS` from the GitHub release page, verify the
-archive, extract it, and rerun the installer from the extracted folder:
+`grepleaks update` installs the newest published release and rebuilds the tool
+image with the latest tools, then exits. Set `GREPLEAKS_UPDATE_REF` to pin
+another release, a commit, or `main`.
+
+The launcher also refreshes the image on its own. When the image is more than
+seven days old it rebuilds it in the background at startup **from the ref it was
+installed from**: the tools move to their current versions, the engine stays where
+it is. The session you are in keeps the tools it started with; the next launch
+uses the new image. Images built from a local checkout (`--source`) are never
+refreshed automatically.
+
+- `GREPLEAKS_AUTO_UPDATE=0` turns the automatic refresh off.
+- `GREPLEAKS_UPDATE_DAYS=14` changes the age threshold.
+- `grepleaks --update` is the same as `grepleaks update`.
+- Progress is appended to `~/.grepleaks/state/update.log`; a failed rebuild is
+  retried at most once a day and the current image stays usable throughout.
+
+Images built before this release carry no build date or source ref, so run
+`grepleaks update` once after upgrading to enable the automatic path.
+
+`grepleaks --version` reports the installed release. To pin a release instead,
+download the release tarball and its `SHA256SUMS` from the GitHub release page,
+verify the archive, extract it, and rerun the installer from the extracted folder:
 
 ```bash
 sha256sum -c SHA256SUMS
