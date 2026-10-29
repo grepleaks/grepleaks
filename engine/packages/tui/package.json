@@ -59,10 +59,10 @@
     "diff": "catalog:",
     "effect": "catalog:",
     "fuzzysort": "catalog:",
-    "open": "10.1.2",
+    "open": "10.2.0",
     "opentui-spinner": "catalog:",
     "remeda": "catalog:",
-    "strip-ansi": "7.1.2",
+    "strip-ansi": "7.2.0",
     "solid-js": "catalog:"
   },
   "devDependencies": {
