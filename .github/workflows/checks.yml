@@ -34,10 +34,21 @@ jobs:
           bun-version: 1.4.2
       - run: bun install --frozen-lockfile
         working-directory: engine
+      # Remaining advisories have no compatible fix yet:
+      # - @modelcontextprotocol/sdk is held at 1.31.0 by patches/@modelcontextprotocol%2Fsdk@1.31.0.patch
+      #   (determineScope); 1.32.0 removes both advisories once that patch is ported.
+      # - toml reaches us through effect (^4.1.1); the fix ships only in toml 5.0.1.
+      # - zod 3.25.76 is the EOL 3.x line pulled by third-party SDKs; the fix is 4.6.6+.
       - run: >-
           bun audit --audit-level=high
           --ignore GHSA-vfj7-8cjw-p6xm
           --ignore GHSA-hp3w-g68c-fv3c
+          --ignore GHSA-22jm-h49p-29qw
+          --ignore GHSA-46jr-4wx8-v453
+          --ignore GHSA-4qx8-w7c3-pj3p
+          --ignore GHSA-9j65-hcg3-gc64
+          --ignore GHSA-9qmh-m7c6-f92p
+          --ignore GHSA-mrhx-c7xc-m3w5
         working-directory: engine
       - run: bun typecheck
         working-directory: engine/packages/opencode
