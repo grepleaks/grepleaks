@@ -304,6 +304,7 @@ More detail, including authenticated headless API mode: [INSTALL.md](INSTALL.md)
 | [Security](SECURITY.md) | Data exposure, permissions and vulnerability reporting. |
 | [Contributing](CONTRIBUTING.md) | Local development, tests and contribution conventions. |
 | [Licensing](docs/LICENSING.md) | Permitted professional use, sharing and the no-resale restriction. |
+| [Changelog](CHANGELOG.md) | What changed in each release, including upgrade notes. |
 
 Use Grepleaks only on systems you own or are authorized to test. Prompts, file
 contents and tool output go to the model that runs your session: with the

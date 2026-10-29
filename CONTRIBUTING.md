@@ -3,6 +3,23 @@
 Use the Grepleaks Docker launcher for product testing and keep upstream license
 notices intact.
 
+## Repository layout
+
+| Path | What lives there |
+| :--- | :--- |
+| `grepleaks`, `grepleaks.cmd`, `install.ps1` | Host launchers and the Windows installer entry point. |
+| `scripts/` | Installer, launcher, database repair, container smoke test, release archive. |
+| `docker/` | Image definition, entrypoint and the container configuration module. |
+| `host/` | Host companion: bridge, staging and the pairing protocol. |
+| `engine/` | Forked OpenCode monorepo. `packages/opencode` is the agent, `packages/tui` the terminal interface, `packages/ui` its component library; `engine/.opencode/` holds the skills, agents and tools Grepleaks ships. |
+| `docs/` | Host access, host companion and licensing guides. |
+| `.github/` | CI and dependency automation for this repository. The engine keeps no CI of its own. |
+| `CHANGELOG.md` | Release history, one section per tag. |
+
+The engine is built from source inside the image, so the Bun lockfiles are
+committed on purpose and the image is the only build target. Release assets are
+produced by `scripts/release.sh` from a tag.
+
 Before submitting changes:
 
 ```bash
