@@ -10,6 +10,14 @@ Original Grepleaks additions are separately licensed under the root `LICENSE`;
 see `engine/GREPLEAKS_LICENSE.md`. This does not restrict the MIT rights in the
 inherited OpenCode material.
 
+## Fonts
+
+`engine/packages/ui/src/assets/fonts/Inter.ttf` and
+`engine/packages/ui/src/assets/fonts/JetBrainsMonoNerdFontMono-Regular.woff2`
+are licensed under the SIL Open Font License, Version 1.1. The copyright
+notices and the full license text are in
+`engine/packages/ui/src/assets/fonts/LICENSE`.
+
 ## Bundled skills
 
 Skills declaring Apache-2.0 retain their existing notices and license. Missing copies

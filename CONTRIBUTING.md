@@ -7,7 +7,7 @@ Before submitting changes:
 
 ```bash
 bash -n grepleaks docker/entrypoint.sh
-python3 -m py_compile scripts/install.py scripts/launch.py scripts/smoke-container.py
+python3 -m py_compile scripts/install.py scripts/launch.py scripts/repair-db.py scripts/smoke-container.py
 ```
 
 For TUI changes, install engine dependencies with Bun 1.4.2, then run `bun typecheck`

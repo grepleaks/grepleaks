@@ -16,14 +16,14 @@ working with sensitive material.
 
 ## Reporting a vulnerability
 
-Use GitHub's **Security → Report a vulnerability** once private vulnerability
-reporting is enabled for the published repository. Do not post live keys, private
+Use GitHub's **Security → Report a vulnerability** (private vulnerability
+reporting is enabled for this repository). Do not post live keys, private
 engagement data or working credentials in public issues. If that private channel is
 unavailable, ask the maintainer for a private reporting channel without disclosing
 the sensitive details publicly.
 
-The repository maintainer should enable private vulnerability reporting and verify
-secret scanning/push protection before opening the repository to contributions.
+Private vulnerability reporting, secret scanning and push protection are enabled
+for this repository. Re-verify them after repository setting changes.
 
 ## Leaked credentials
 
@@ -41,8 +41,18 @@ model behavior is made.
 
 ## Host companion preview
 
-`--host-bridge` extends the trust boundary to the user's machine. The session token
-prevents unauthenticated local requests, but the container holds that token: a
-compromised container/plugin can bypass the intended TUI flow. This is not a
-sandbox or a hardware-backed approval channel. Enable it only for trusted sessions.
+The standard launcher keeps provider credentials in the private auth store, not
+in the container shell environment, after configuration. The default permission
+policy denies tool reads of the state, config and runtime directories. The host
+companion starts with a session-scoped token in a `0600` file instead of the
+process environment.
+
+`--host-bridge` extends the trust boundary to the user's machine. Host commands
+run with a filtered environment: credential-looking variables such as `*_TOKEN`,
+`*_SECRET`, `*_PASSWORD`, `*_API_KEY`, `AWS_*`, `GITHUB_TOKEN` and `SSH_AUTH_SOCK`
+are removed. Opt a specific variable back in with
+`GREPLEAKS_HOST_ENV_ALLOW=NAME[,NAME]`. The session token prevents unauthenticated
+local requests, but the container holds that token: a compromised container/plugin
+can bypass the intended TUI flow. This is not a sandbox or a hardware-backed
+approval channel. Enable it only for trusted sessions.
 See [the companion design](docs/HOST_COMPANION.md) before using broad host access.

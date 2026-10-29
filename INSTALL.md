@@ -29,7 +29,8 @@ python3 scripts/install.py --source . && export PATH="$HOME/.local/bin:$PATH"
 On Windows, in PowerShell:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\install.ps1
+Unblock-File .\install.ps1
+.\install.ps1
 $env:Path = "$env:LOCALAPPDATA\Grepleaks\bin;$env:Path"
 ```
 
@@ -50,38 +51,48 @@ and use its `./grepleaks` / `.\grepleaks.cmd` launcher instead.
 
 ## Update
 
-`grepleaks --version` reports the installed release. To update to the latest
-published sources, rerun the same install command you used, for example:
+`grepleaks --version` reports the installed release. To update, download the
+release tarball and its `SHA256SUMS` from the GitHub release page, verify the
+archive, extract it, and rerun the installer from the extracted folder:
 
 ```bash
-(set -o pipefail; curl -fsSL https://raw.githubusercontent.com/grepleaks/grepleaks/main/scripts/install.py | python3 - --repository grepleaks/grepleaks) && export PATH="$HOME/.local/bin:$PATH"
+sha256sum -c SHA256SUMS
+tar -xzf grepleaks-vX.Y.Z.tar.gz
+cd grepleaks-X.Y.Z
+python3 scripts/install.py --source .
+```
+
+Replace `X.Y.Z` with the release tag you downloaded. On macOS, use
+`shasum -a 256 -c SHA256SUMS` instead of `sha256sum -c`. Do not pipe a moving
+branch such as `main` into a shell. If you use the repository installer, pin a
+tag or commit and pass the published digest:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/grepleaks/grepleaks/vX.Y.Z/scripts/install.py -o install.py
+# Read install.py before running it.
+python3 install.py --repository grepleaks/grepleaks --ref vX.Y.Z --sha256 <release-digest>
 ```
 
 The image rebuild reuses Docker's cache, so updates are much faster than the
-first install. To stay on a fixed release, replace `main` with the tag (for
-example `v0.1.0`) in both places, and only rerun the command when you want that
-release. Your model connections, sessions and engagement files are preserved:
-they live in `~/.grepleaks/state` and your workspace folder, not in the image.
+first install. Your model connections, sessions and engagement files are
+preserved: they live in `~/.grepleaks/state` and your workspace folder, not in
+the image.
 
-### Download and install in one command
+### About one-command installs
 
-macOS/Linux (Bash/Zsh):
+There is deliberately no `curl | sh` one-liner. Download the release tarball and
+`SHA256SUMS` from the GitHub release page, verify the checksum, extract the
+archive, and run `python3 scripts/install.py --source .` from the extracted
+folder. Windows uses the same archive with `install.ps1`.
 
-```bash
-(set -o pipefail; curl -fsSL https://raw.githubusercontent.com/grepleaks/grepleaks/main/scripts/install.py | python3 - --repository grepleaks/grepleaks) && export PATH="$HOME/.local/bin:$PATH"
-```
-
-Windows PowerShell:
-
-```powershell
-& ([scriptblock]::Create((Invoke-RestMethod https://raw.githubusercontent.com/grepleaks/grepleaks/main/install.ps1))) -Repository grepleaks/grepleaks
-```
+For automation, `scripts/install.py --repository OWNER/REPO --ref TAG --sha256
+<digest>` verifies the ZIP downloaded from codeload. Publish that ZIP digest with
+the release if you use this path; it is a different file from the release tarball.
 
 Both install from the repository and build locally; no prebuilt registry image is
-required. Docker and Python must already be installed. You can download and inspect
-the installer before running it instead of executing the download directly.
-To pin a version, replace `main` with a release tag or commit in both places of
-the command.
+required. Docker and Python must already be installed. Always pin a release tag
+or commit and verify the archive checksum; `main` is a moving development branch
+and is not a safe installation target.
 
 ### Uninstall
 
@@ -153,12 +164,13 @@ containing real credentials.
 
 ## Host companion
 
-`grepleaks` automatically starts and pairs its host companion on macOS, Windows
-and Linux. No setup flag is required. It runs as the account launching Grepleaks;
-it does not elevate to administrator/root or bypass operating-system permissions.
-Host commands use the existing approval prompts. Use `--no-host-bridge` to disable
-this access, or `--host-bridge` as an explicit equivalent of the default.
-The optional `/host` mount (`--host-access`) is independent of the companion.
+`grepleaks` starts and pairs its host companion on macOS, Windows and Linux only
+when `--host-bridge` is passed. No separate setup is required. It runs as the
+account launching Grepleaks; it does not elevate to administrator/root or bypass
+operating-system permissions. Host commands use the existing approval prompts.
+The default is container-only operation (`--no-host-bridge` is an explicit
+equivalent). The optional `/host` mount (`--host-access`) is independent of the
+companion.
 
 ## Files and local development
 
@@ -189,6 +201,11 @@ server mode without authentication when invoked directly with Docker.
 
 ## Troubleshooting
 
+- `database disk image is malformed`: close other Grepleaks sessions and run
+  `grepleaks --repair-db`. It backs up the SQLite file under
+  `~/.grepleaks/state/data/opencode/backup-*`, recovers what it can, and rebuilds
+  the database if needed. Engagement files are not touched. Only one launcher may
+  use a state directory at a time; use `GREPLEAKS_STATE_DIR` for parallel states.
 - Mount rejected: the directory must be shared with Docker's daemon or Linux VM.
 - Host service unreachable: use `host.docker.internal`, check its bind address and
   firewall; container `localhost` refers to the container.

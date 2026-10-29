@@ -1,7 +1,6 @@
 # Local-only material never published in this repository.
 /-C
 /landing/
-/engagement_izzico/
 /DESIGN.md
 /PRODUCT.md
 /.impeccable/
@@ -20,6 +19,7 @@
 *.pfx
 # Host artifacts and engagement data.
 /engagements/
+/engagement_*/
 /reports/
 /private/
 /dev/

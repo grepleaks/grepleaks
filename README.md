@@ -48,7 +48,7 @@ interactive tool cards and pentest-oriented prompt suggestions.
 | **Tools on demand** | A core toolkit comes with the image. The agent can install additional compatible tools inside the container when needed. |
 | **Your model** | Start with the **Grepleaks key** (unrestricted models from our partner abliteration.ai), or connect any OpenAI-compatible API with your own endpoint, model ID and key. |
 | **Actions you can review** | The default policy asks for permission for actions such as command execution; some operations, including reading files, are allowed. |
-| **A built-in host companion** | Request commands on your actual Mac, Windows or Linux machine when the task needs access beyond the container. |
+| **An opt-in host companion** | Pass `--host-bridge` to request commands on your actual Mac, Windows or Linux machine when the task needs access beyond the container. |
 
 ## Get started
 
@@ -73,6 +73,8 @@ cd grepleaks
 
 Prefer a download? Use **[Download ZIP](https://github.com/grepleaks/grepleaks/archive/refs/heads/main.zip)**
 or pick a tagged archive on the [releases page](https://github.com/grepleaks/grepleaks/releases).
+For a verified install, use a tagged release archive and its `SHA256SUMS`; `main`
+is a development branch.
 Then open a terminal in the folder containing this README.
 
 ### 2. Install once
@@ -90,7 +92,8 @@ python3 scripts/install.py --source . && export PATH="$HOME/.local/bin:$PATH"
 <summary><strong>Windows: PowerShell</strong></summary>
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\install.ps1
+Unblock-File .\install.ps1
+.\install.ps1
 $env:Path = "$env:LOCALAPPDATA\Grepleaks\bin;$env:Path"
 ```
 
@@ -107,7 +110,8 @@ grepleaks
 ```
 
 Use `grepleaks --workspace /path/to/engagement` to keep engagement files in a host
-folder. The host companion starts automatically; use `--no-host-bridge` for container-only operation.
+folder. The host companion is opt-in: pass `--host-bridge` when the task needs
+commands on the real host; the default is container-only operation.
 After installation, you can remove the downloaded repository. The installer keeps
 only the host launcher and license notices; the engine lives in the Docker image.
 
@@ -212,26 +216,27 @@ Choose the access the task actually needs:
 
 | Option | What it makes available |
 | :--- | :--- |
-| `--no-host-bridge` | Container execution only, with private persistent state; no host commands. |
+| `--host-bridge` | Opt in to the companion, which can execute commands on the real host with your user privileges. |
+| `--no-host-bridge` | Container execution only (the default), with private persistent state; no host commands. |
 | `--workspace PATH` | One existing host folder, mounted **read-write** at `/engagement`. |
 | `--host-access` | Your home directory, mounted **read-write** at `/host`. Set `GREPLEAKS_HOST_ROOT` to choose another folder. |
-| Default (`--no-host-bridge` to disable) | The companion, which can execute commands on the real host with your user privileges. |
 
 For a workspace plus the companion:
 
 ```bash
-./grepleaks --workspace "$PWD/engagements"
+./grepleaks --host-bridge --workspace "$PWD/engagements"
 ```
 
 On Windows:
 
 ```powershell
-.\grepleaks.cmd --workspace "$PWD\engagements"
+.\grepleaks.cmd --host-bridge --workspace "$PWD\engagements"
 ```
 
-The companion starts and pairs automatically for that session. No second terminal
-or manual token exchange is needed. The agent gets `host_info` to identify the host
-and `host_run` to request host commands through the permission flow.
+The companion starts and pairs automatically when `--host-bridge` is passed. No
+second terminal or manual token exchange is needed. The agent gets `host_info` to
+identify the host and `host_run` to request host commands through the permission
+flow.
 
 Host commands run **outside Docker**. Permission prompts are application controls,
 not a host sandbox: a compromised container with access to the pairing credential
