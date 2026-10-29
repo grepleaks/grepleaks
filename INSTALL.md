@@ -232,6 +232,11 @@ server mode without authentication when invoked directly with Docker.
 
 ## Troubleshooting
 
+- `Docker is not installed` or `its daemon is not running`: Grepleaks stops before
+  it touches anything and says which of the two it is. Install Docker Desktop or
+  Docker Engine, start it, then run `grepleaks` again. On Linux, add your user to
+  the `docker` group instead of running the launcher with `sudo`. Only
+  `grepleaks --console` and `grepleaks --repair-db` work without a daemon.
 - `database disk image is malformed`: close other Grepleaks sessions and run
   `grepleaks --repair-db`. It backs up the SQLite file under
   `~/.grepleaks/state/data/opencode/backup-*`, recovers what it can, and rebuilds

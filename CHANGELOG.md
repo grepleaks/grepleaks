@@ -4,6 +4,16 @@ Releases are tagged `vX.Y.Z` and published on the
 [releases page](https://github.com/grepleaks/grepleaks/releases). Installation and
 upgrade steps live in [INSTALL.md](INSTALL.md).
 
+## [Unreleased]
+
+### Fixed
+
+- A missing or stopped Docker daemon no longer ends in a Python traceback. The
+  launcher probes `docker info` before it touches state and stops with one
+  sentence that names the problem and the fix; Docker calls in the container
+  reaping and image-label paths also tolerate a missing binary. `--console` and
+  `--repair-db` keep working without a daemon.
+
 ## [0.1.1] - 2026-10-29
 
 ### Added

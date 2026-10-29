@@ -133,11 +133,36 @@ def image_name(env):
     return env.get("GREPLEAKS_IMAGE", "grepleaks:local")
 
 
+DOCKER_MISSING = (
+    "Docker is not installed. Install Docker Desktop (macOS, Windows) or Docker Engine "
+    "(Linux), then run grepleaks again. See INSTALL.md."
+)
+DOCKER_STOPPED = (
+    "Docker is installed but its daemon is not running or not reachable. Start Docker "
+    "Desktop or the docker service (on Linux your user may also need the docker group), "
+    "then run grepleaks again. See INSTALL.md."
+)
+
+
+def docker_problem():
+    """None when a usable daemon answers, else a sentence to show the user."""
+    try:
+        probe = subprocess.run(["docker", "info"], capture_output=True, text=True, timeout=20)
+    except FileNotFoundError:
+        return DOCKER_MISSING
+    except (OSError, subprocess.SubprocessError):
+        return DOCKER_STOPPED
+    return None if probe.returncode == 0 else DOCKER_STOPPED
+
+
 def image_label(image, key):
-    probe = subprocess.run(
-        ["docker", "image", "inspect", image, "--format", '{{index .Config.Labels "' + key + '"}}'],
-        text=True, capture_output=True,
-    )
+    try:
+        probe = subprocess.run(
+            ["docker", "image", "inspect", image, "--format", '{{index .Config.Labels "' + key + '"}}'],
+            text=True, capture_output=True,
+        )
+    except OSError:
+        return None
     if probe.returncode != 0:
         return None
     raw = probe.stdout.strip()
@@ -396,10 +421,13 @@ def state_id(state):
 
 def running_containers(state):
     """Session containers of this state dir, plus pre-label leftovers by name."""
-    listing = subprocess.run(
-        ["docker", "ps", "--format", '{{.Names}}\t{{.Label "com.grepleaks.state"}}'],
-        text=True, capture_output=True,
-    )
+    try:
+        listing = subprocess.run(
+            ["docker", "ps", "--format", '{{.Names}}\t{{.Label "com.grepleaks.state"}}'],
+            text=True, capture_output=True,
+        )
+    except OSError:
+        return []
     if listing.returncode != 0:
         return []
     mine = state_id(state)
@@ -551,6 +579,12 @@ def main():
     if args.console:
         print(CONSOLE_URL)
         return 0 if open_in_browser(CONSOLE_URL) else 1
+    # Everything except the console link and the SQLite repair needs a daemon.
+    if not args.repair_db:
+        problem = docker_problem()
+        if problem:
+            print(f"Grepleaks: {problem}", file=sys.stderr)
+            return 1
     if args.update:
         return run_update()
     try:
