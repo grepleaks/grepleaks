@@ -170,7 +170,7 @@ describe("tool.grep", () => {
     }),
   )
 
-  it.instance("does not ask for external_directory when alias path is allowed", () =>
+  it.instance("does not ask for external_directory when the canonical path is allowed", () =>
     Effect.gen(function* () {
       if (process.platform === "win32") return
 
@@ -184,11 +184,14 @@ describe("tool.grep", () => {
       yield* Effect.promise(() => fs.mkdir(real))
       yield* Effect.promise(() => fs.symlink(real, alias, "dir"))
       yield* Effect.promise(() => Bun.write(path.join(real, "test.txt"), "needle"))
+      const canonicalReal = yield* Effect.promise(() => fs.realpath(real))
 
       const ruleset = Permission.fromConfig({
         grep: "allow",
         external_directory: {
           [path.join(alias, "*")]: "allow",
+          [path.join(real, "*")]: "allow",
+          [path.join(canonicalReal, "*")]: "allow",
         },
       })
       const requests: Array<Omit<PermissionV1.Request, "id" | "sessionID" | "tool">> = []

@@ -678,7 +678,9 @@ describe("session.compaction.prune", () => {
             state: {
               status: "completed",
               input: {},
-              output: "x".repeat(200_000),
+              // PRUNE_PROTECT is 80k tokens; Token.estimate uses roughly 4 chars
+              // per token, so this must stay well above 320k characters.
+              output: "x".repeat(400_000),
               title: "done",
               metadata: {},
               time: { start: Date.now(), end: Date.now() },

@@ -1,6 +1,7 @@
 import { PermissionV1 } from "@opencode-ai/core/v1/permission"
 import { LayerNode } from "@opencode-ai/core/effect/layer-node"
 import { describe, expect } from "bun:test"
+import fs from "fs/promises"
 import path from "path"
 import { Effect } from "effect"
 import { CrossSpawnSpawner } from "@opencode-ai/core/cross-spawn-spawner"
@@ -75,6 +76,26 @@ describe("tool.assertExternalDirectory", () => {
       expect(req).toBeDefined()
       expect(req!.patterns).toEqual([expected])
       expect(req!.always).toEqual([expected])
+    }),
+  )
+
+  it.instance("asks when a symlink inside the instance points outside", () =>
+    Effect.gen(function* () {
+      if (process.platform === "win32") return
+
+      const test = yield* TestInstance
+      const outer = yield* tmpdirScoped()
+      const secret = path.join(outer, "secret.txt")
+      yield* Effect.promise(() => fs.writeFile(secret, "secret"))
+      const link = path.join(test.directory, "link.txt")
+      yield* Effect.promise(() => fs.symlink(secret, link))
+
+      const { requests, ctx } = makeCtx()
+      yield* assertExternalDirectoryEffect(ctx, link)
+
+      const req = requests.find((r) => r.permission === "external_directory")
+      expect(req).toBeDefined()
+      expect(req!.patterns).toEqual([glob(path.join(outer, "*"))])
     }),
   )
 
