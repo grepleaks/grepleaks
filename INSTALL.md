@@ -232,6 +232,10 @@ server mode without authentication when invoked directly with Docker.
   `~/.grepleaks/state/data/opencode/backup-*`, recovers what it can, and rebuilds
   the database if needed. Engagement files are not touched. Only one launcher may
   use a state directory at a time; use `GREPLEAKS_STATE_DIR` for parallel states.
+- Leftover containers after a closed terminal: closing a window stops the
+  session now, and the next launch stops any container a killed launcher left
+  behind (it reports how many). `docker ps` should only ever show the session you
+  are using.
 - Mount rejected: the directory must be shared with Docker's daemon or Linux VM.
 - Host service unreachable: use `host.docker.internal`, check its bind address and
   firewall; container `localhost` refers to the container.

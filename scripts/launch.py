@@ -2,6 +2,7 @@
 """Cross-platform launcher. The host companion is opt-in via --host-bridge."""
 import argparse
 from datetime import datetime, timezone
+import hashlib
 import json
 import os
 import re
@@ -297,6 +298,84 @@ def refresh_in_background(state, env):
     )
 
 
+def sessions_file(state):
+    return state / "sessions.json"
+
+
+def read_sessions(state):
+    """Container name -> launcher pid, for the sessions this state dir started."""
+    try:
+        saved = json.loads(sessions_file(state).read_text())
+    except (OSError, ValueError):
+        return {}
+    if not isinstance(saved, dict):
+        return {}
+    return {str(name): int(pid) for name, pid in saved.items() if isinstance(pid, (int, float))}
+
+
+def write_sessions(state, sessions):
+    try:
+        sessions_file(state).write_text(json.dumps(sessions))
+    except OSError:
+        pass
+
+
+def process_running(pid):
+    try:
+        os.kill(int(pid), 0)
+        return True
+    except (OSError, ValueError, TypeError):
+        return False
+
+
+def state_id(state):
+    """Stable per-state-directory id, so one install never reaps another's."""
+    return hashlib.sha256(str(state).encode()).hexdigest()[:12]
+
+
+def running_containers(state):
+    """Session containers of this state dir, plus pre-label leftovers by name."""
+    listing = subprocess.run(
+        ["docker", "ps", "--format", '{{.Names}}\t{{.Label "com.grepleaks.state"}}'],
+        text=True, capture_output=True,
+    )
+    if listing.returncode != 0:
+        return []
+    mine = state_id(state)
+    names = []
+    for line in listing.stdout.splitlines():
+        name, _, label = line.partition("\t")
+        name, label = name.strip(), label.strip()
+        if not name:
+            continue
+        if label == mine:
+            names.append(name)
+        elif not label and re.fullmatch(r"grepleaks-[0-9a-f]{12}", name):
+            names.append(name)
+    return names
+
+
+def reap_sessions(state):
+    """Stop containers whose launcher died with its terminal.
+
+    A closed window or a killed launcher skips the cleanup block, which leaves a
+    full engine container running. Only one launcher may hold the state lock, so
+    any container that no live launcher owns is a leftover.
+    """
+    sessions = read_sessions(state)
+    alive = {name: pid for name, pid in sessions.items() if process_running(pid)}
+    stopped = 0
+    for name in running_containers(state):
+        if name in alive:
+            continue
+        subprocess.run(["docker", "stop", "-t", "5", name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        stopped += 1
+    write_sessions(state, alive)
+    if stopped:
+        print(f"Grepleaks: stopped {stopped} leftover session container(s) from a closed terminal.", file=sys.stderr)
+    return alive
+
+
 def check_database(state):
     database = state / "data" / "opencode" / "opencode-local.db"
     if not database.is_file():
@@ -366,7 +445,7 @@ def command(args, env, terminal, state):
         port = int(env.get("GREPLEAKS_PORT", "4096"))
         if not 1 <= port <= 65535: raise ValueError("Invalid port")
         result += ["-p", f"127.0.0.1:{port}:4096"]
-    result += ["--name", args.container_name]
+    result += ["--name", args.container_name, "--label", f"com.grepleaks.state={state_id(state)}"]
     if args.host_bridge:
         result += ["-p", "127.0.0.1::8788"]
     return result + [env.get("GREPLEAKS_IMAGE", "grepleaks:local")] + args.command
@@ -376,6 +455,8 @@ def main():
     def interrupted(_signal, _frame):
         raise KeyboardInterrupt
     signal.signal(signal.SIGTERM, interrupted)
+    if hasattr(signal, "SIGHUP"):
+        signal.signal(signal.SIGHUP, interrupted)
     parser = argparse.ArgumentParser(allow_abbrev=False, description="Grepleaks — Your AI pentest environment. Build with docker build -f docker/Dockerfile -t grepleaks:local .")
     parser.add_argument("--dev", action="store_true", help="Mount local sources read-only; restart after edits")
     parser.add_argument("--workspace", help="Existing directory mounted read-write at /engagement")
@@ -414,6 +495,7 @@ def main():
     if args.host_bridge:
         env["GREPLEAKS_HOST_TOKEN"] = secrets.token_urlsafe(48)
     if args.command not in (["--version"], ["-v"]):
+        reap_sessions(state)
         notify_update(state, env)
     args.container_name = "grepleaks-" + secrets.token_hex(6)
     try:
@@ -430,6 +512,9 @@ def main():
         print(f"Grepleaks: {error}", file=sys.stderr); return 1
     stop = threading.Event()
     thread = None
+    sessions = read_sessions(state)
+    sessions[args.container_name] = os.getpid()
+    write_sessions(state, sessions)
     try:
         child = subprocess.Popen(argv, env=env)
     except OSError:
@@ -459,6 +544,9 @@ def main():
         if args.container_name:
             print("Grepleaks: closing the session…", file=sys.stderr)
             subprocess.run(["docker", "stop", "-t", "5", args.container_name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            sessions = read_sessions(state)
+            sessions.pop(args.container_name, None)
+            write_sessions(state, sessions)
         if child.poll() is None:
             child.terminate()
             try: child.wait(timeout=5)
