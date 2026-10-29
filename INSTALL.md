@@ -142,7 +142,11 @@ the unrestricted models served by our partner abliteration.ai, switchable betwee
 the three models from `/models`. `ctrl+k` copies the console link
 (`grepleaks.com/console`) when you need a key; escaping that step opens **Models**,
 where **+ Add model** connects your own OpenAI-compatible API with its display
-name, base URL, exact model ID and API key. Use `/models` to switch models later. The **Configure** action edits the
+name, base URL, exact model ID and API key.
+
+On that first run Grepleaks also opens the console in your browser, once, so the
+key is one click away (`GREPLEAKS_OPEN_CONSOLE=0` disables it). `grepleaks console`
+reopens it at any time; inside a session, `ctrl+k` copies the link. Use `/models` to switch models later. The **Configure** action edits the
 selected connection. Pick a model that supports tool calling; see the provider
 recommendations in the README.
 

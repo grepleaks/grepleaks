@@ -119,7 +119,9 @@ On first launch with no key configured, the TUI asks for the **Grepleaks key**
 first: one key for the unrestricted models served by our partner abliteration.ai,
 paste it once and switch between the three models from **`/models`**. `ctrl+k`
 copies the console link when you need one, and escaping the step opens **Models**,
-where **+ Add model** connects your own OpenAI-compatible provider.
+where **+ Add model** connects your own OpenAI-compatible provider. On that first
+run Grepleaks also opens the console in your browser once (`grepleaks console`
+reopens it later).
 
 Enter the provider's API base URL, exact model ID and API key directly in the TUI.
 Key input is hidden. Connections and your selected model are saved in your private

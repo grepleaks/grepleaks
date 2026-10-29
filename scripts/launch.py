@@ -64,6 +64,67 @@ def acquire_state_lock(state):
     return handle
 
 
+CONSOLE_URL = "https://grepleaks.com/console"
+
+
+def open_in_browser(url):
+    """Open a URL with the host's default browser. The engine runs inside the
+    container, so this is the only place that can reach a browser."""
+    try:
+        if os.name == "nt":
+            os.startfile(url)  # type: ignore[attr-defined]
+            return True
+        command = "open" if sys.platform == "darwin" else "xdg-open"
+        subprocess.Popen(
+            [command, url],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+        )
+        return True
+    except (OSError, AttributeError):
+        return False
+
+
+def configured_providers(state):
+    """Provider ids the engine has configured, from its global config and auth store."""
+    ids = set()
+    try:
+        config = json.loads((state / "config" / "opencode" / "opencode.json").read_text())
+        if isinstance(config, dict):
+            ids.update((config.get("provider") or {}).keys())
+    except (OSError, ValueError, AttributeError):
+        pass
+    try:
+        auth = json.loads((state / "data" / "opencode" / "auth.json").read_text())
+        if isinstance(auth, dict):
+            ids.update(auth.keys())
+    except (OSError, ValueError, AttributeError):
+        pass
+    return ids
+
+
+def maybe_open_console(state, env):
+    """On a truly first run, open the console so a key is one click away."""
+    if env.get("GREPLEAKS_OPEN_CONSOLE", "1") == "0":
+        return
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        return
+    marker = state / "console-opened"
+    if marker.exists():
+        return
+    providers = configured_providers(state)
+    if "grepleaks" in providers or providers:
+        return
+    if not open_in_browser(CONSOLE_URL):
+        return
+    try:
+        marker.touch()
+    except OSError:
+        pass
+    print(f"Grepleaks: opened {CONSOLE_URL} in your browser to create a key.", file=sys.stderr, flush=True)
+
+
 UPDATE_DAYS_DEFAULT = 7
 UPDATE_RETRY_SECONDS = 24 * 3600
 
@@ -463,6 +524,7 @@ def main():
     parser.add_argument("--host-access", action="store_true", help="Expose home or GREPLEAKS_HOST_ROOT read-write at /host")
     parser.add_argument("--repair-db", action="store_true", help="Back up and rebuild the session database")
     parser.add_argument("--update", action="store_true", help="Rebuild the tool image with the latest tools, then exit")
+    parser.add_argument("--console", action="store_true", help="Open the Grepleaks console in your browser, then exit")
     bridge = parser.add_mutually_exclusive_group()
     bridge.add_argument("--host-bridge", dest="host_bridge", action="store_true", help="Enable the host companion: commands on the real host, after approval")
     bridge.add_argument("--no-host-bridge", dest="host_bridge", action="store_false", help="Disable the host companion (default); use the container only")
@@ -472,6 +534,9 @@ def main():
     args.command = forwarded + args.command
     if args.command == ["update"]:
         args.update = True
+        args.command = []
+    if args.command == ["console"]:
+        args.console = True
         args.command = []
     # Version queries do not execute an agent or need a companion process.
     if args.command in (["--version"], ["-v"]):
@@ -483,6 +548,9 @@ def main():
     state.mkdir(mode=0o700, parents=True, exist_ok=True)
     if os.name != "nt":
         state.chmod(0o700)
+    if args.console:
+        print(CONSOLE_URL)
+        return 0 if open_in_browser(CONSOLE_URL) else 1
     if args.update:
         return run_update()
     try:
@@ -496,6 +564,7 @@ def main():
         env["GREPLEAKS_HOST_TOKEN"] = secrets.token_urlsafe(48)
     if args.command not in (["--version"], ["-v"]):
         reap_sessions(state)
+        maybe_open_console(state, env)
         notify_update(state, env)
     args.container_name = "grepleaks-" + secrets.token_hex(6)
     try:
