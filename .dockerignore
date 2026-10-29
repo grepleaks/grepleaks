@@ -23,6 +23,9 @@ private
 dev
 botnet
 tui
+# Tests and their fixtures are not needed to run the engine in the image.
+engine/packages/*/test
+engine/packages/sdk/js/test
 engine/artifacts
 engine/perf
 .grepleaks-smoke-*

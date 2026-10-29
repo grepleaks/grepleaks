@@ -28,7 +28,6 @@
       "packages/sdk/js",
       "packages/server",
       "packages/tui",
-      "packages/ui",
       "packages/opencode"
     ],
     "catalog": {
