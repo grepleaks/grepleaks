@@ -115,12 +115,11 @@ commands on the real host; the default is container-only operation.
 After installation, you can remove the downloaded repository. The installer keeps
 only the host launcher and license notices; the engine lives in the Docker image.
 
-On first launch, the TUI opens **Models**:
-
-- **Grepleaks key**: one key for the unrestricted models served by our partner
-  abliteration.ai. Paste it once and switch between the three models from
-  **`/models`**.
-- **+ Add model**: connect your own OpenAI-compatible provider.
+On first launch with no key configured, the TUI asks for the **Grepleaks key**
+first: one key for the unrestricted models served by our partner abliteration.ai,
+paste it once and switch between the three models from **`/models`**. `ctrl+k`
+copies the console link when you need one, and escaping the step opens **Models**,
+where **+ Add model** connects your own OpenAI-compatible provider.
 
 Enter the provider's API base URL, exact model ID and API key directly in the TUI.
 Key input is hidden. Connections and your selected model are saved in your private

@@ -27,6 +27,7 @@ import {
 import { TuiPathsProvider, TuiStartupProvider, TuiTerminalEnvironmentProvider, useTuiStartup } from "./context/runtime"
 import { DialogProvider, useDialog } from "./ui/dialog"
 import { DialogModel } from "./component/dialog-model"
+import { useModelSetup } from "./component/dialog-add-model"
 import { configuredModels } from "./util/grepleaks-model"
 import { ErrorComponent } from "./component/error-component"
 import { PluginRouteMissing } from "./component/plugin-route-missing"
@@ -369,6 +370,7 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
   const dimensions = useTerminalDimensions()
   const renderer = useRenderer()
   const dialog = useDialog()
+  const addModel = useModelSetup()
   const local = useLocal()
   const kv = useKV()
   const keymap = useOpencodeKeymap()
@@ -543,7 +545,11 @@ function App(props: { onSnapshot?: () => Promise<string[]>; pluginHost: TuiPlugi
       (isEmpty, wasEmpty) => {
         // only trigger when we transition into an empty-provider state
         if (!isEmpty || wasEmpty) return
-        dialog.replace(() => <DialogModel />)
+        // Nothing configured yet: lead with the Grepleaks key, then fall back to
+        // the model list (own provider) if the key step is dismissed.
+        void addModel({ providerID: "grepleaks" }).then(() => {
+          if (configuredModels(sync.data.config, sync.data.provider).length === 0) dialog.replace(() => <DialogModel />)
+        })
       },
     ),
   )

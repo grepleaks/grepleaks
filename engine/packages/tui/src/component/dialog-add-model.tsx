@@ -6,12 +6,14 @@ import { useSync } from "../context/sync"
 import { useLocal } from "../context/local"
 import { useTheme } from "../context/theme"
 import { useToast } from "../ui/toast"
+import { useClipboard } from "../context/clipboard"
 import { modelEndpoint } from "../util/grepleaks-model"
 import { DialogModel } from "./dialog-model"
 
 export const GREPLEAKS_PROVIDER_ID = "grepleaks"
 export const GREPLEAKS_BASE_URL = "https://grepleaks.com/v1"
 export const GREPLEAKS_DEFAULT_MODEL = "abliterated-model-large-v2"
+export const GREPLEAKS_CONSOLE_URL = "https://grepleaks.com/console"
 export const GREPLEAKS_MODELS: Record<string, { name: string; reasoning: boolean; tool_call: boolean }> = {
   "abliterated-model-large-v2": { name: "Abliterated Large V2", reasoning: true, tool_call: true },
   "abliterated-model-large-flash": { name: "Abliterated Large Flash", reasoning: true, tool_call: true },
@@ -24,6 +26,7 @@ export function useModelSetup() {
   const sync = useSync()
   const local = useLocal()
   const toast = useToast()
+  const clipboard = useClipboard()
   const { theme } = useTheme()
   const [busy, setBusy] = createSignal(false)
   return async (props: { providerID?: string; modelID?: string } = {}) => {
@@ -60,11 +63,23 @@ export function useModelSetup() {
                 {error ||
                   (field === "key"
                     ? managed
-                      ? "Input hidden. Create a key at grepleaks.com/console. Stored privately on this machine."
+                      ? "Input hidden. One key for the three unrestricted models. No key yet? grepleaks.com/console"
                       : "Input hidden. Stored privately on this machine."
                     : "Connect an OpenAI-compatible API. Settings persist between launches.")}
               </text>
             ),
+            action:
+              field === "key" && managed
+                ? {
+                    label: "Get API key",
+                    onSelect: () => {
+                      void Promise.resolve(clipboard.write?.(GREPLEAKS_CONSOLE_URL)).then(
+                        () => toast.show({ message: "Console URL copied — open it in your browser.", variant: "info" }),
+                        () => toast.show({ message: `Open ${GREPLEAKS_CONSOLE_URL} in your browser.`, variant: "info" }),
+                      )
+                    },
+                  }
+                : undefined,
           },
         )
         if (value === null) return

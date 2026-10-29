@@ -16,6 +16,8 @@ export type DialogPromptProps = {
   secret?: boolean
   onConfirm?: (value: string) => void
   onCancel?: () => void
+  /** Secondary action shown in the footer, e.g. "Get API key". */
+  action?: { label: string; onSelect: () => void }
 }
 
 export function DialogPrompt(props: DialogPromptProps) {
@@ -23,6 +25,7 @@ export function DialogPrompt(props: DialogPromptProps) {
   const { theme } = useTheme()
   const tuiConfig = useTuiConfig()
   const submitShortcut = useCommandShortcut("dialog.prompt.submit")
+  const actionShortcut = useCommandShortcut("dialog.prompt.action")
   const [textareaTarget, setTextareaTarget] = createSignal<TextareaRenderable>()
   const [secret, setSecret] = createSignal(props.secret ? (props.value ?? "") : "")
   let textarea: TextareaRenderable
@@ -44,8 +47,14 @@ export function DialogPrompt(props: DialogPromptProps) {
         category: "Dialog",
         run: confirm,
       },
+      {
+        name: "dialog.prompt.action",
+        title: "Run the dialog prompt action",
+        category: "Dialog",
+        run: () => props.action?.onSelect(),
+      },
     ],
-    bindings: tuiConfig.keybinds.gather("dialog.prompt", ["dialog.prompt.submit"]),
+    bindings: tuiConfig.keybinds.gather("dialog.prompt", ["dialog.prompt.submit", "dialog.prompt.action"]),
   }))
 
   onMount(() => {
@@ -129,6 +138,11 @@ export function DialogPrompt(props: DialogPromptProps) {
           <Show when={submitShortcut()}>
             <text fg={theme.text}>
               {submitShortcut()} <span style={{ fg: theme.textMuted }}>submit</span>
+            </text>
+          </Show>
+          <Show when={props.action && actionShortcut()}>
+            <text fg={theme.text} onMouseUp={() => props.action?.onSelect()}>
+              {actionShortcut()} <span style={{ fg: theme.textMuted }}>{props.action!.label}</span>
             </text>
           </Show>
         </Show>

@@ -136,12 +136,13 @@ if you also want to erase your saved Grepleaks data.
 docker build -f docker/Dockerfile -t grepleaks:local .
 ```
 
-Run `./grepleaks` (or `grepleaks` after installation). On first launch the TUI
-opens **Models**. Choose the **Grepleaks key** (one key for the unrestricted
-models served by our partner abliteration.ai, switchable between the three models
-from `/models`) or **+ Add model** to connect your own
-OpenAI-compatible API with its display name, base URL, exact model ID and API
-key. Use `/models` to switch models later. The **Configure** action edits the
+Run `./grepleaks` (or `grepleaks` after installation). On first launch, with no
+key configured, the TUI goes straight to the **Grepleaks key** step: one key for
+the unrestricted models served by our partner abliteration.ai, switchable between
+the three models from `/models`. `ctrl+k` copies the console link
+(`grepleaks.com/console`) when you need a key; escaping that step opens **Models**,
+where **+ Add model** connects your own OpenAI-compatible API with its display
+name, base URL, exact model ID and API key. Use `/models` to switch models later. The **Configure** action edits the
 selected connection. Pick a model that supports tool calling; see the provider
 recommendations in the README.
 
