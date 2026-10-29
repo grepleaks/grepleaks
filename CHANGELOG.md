@@ -4,15 +4,40 @@ Releases are tagged `vX.Y.Z` and published on the
 [releases page](https://github.com/grepleaks/grepleaks/releases). Installation and
 upgrade steps live in [INSTALL.md](INSTALL.md).
 
-## [Unreleased]
+## [0.1.2] - 2026-10-29
+
+### Added
+
+- Issue and pull request templates. A bug report asks for the version, the host
+  and Docker, and the shortest reproduction; security reports go to the private
+  advisory flow.
+
+### Changed
+
+- The tree is 1700 files and 8 MB lighter. The unused web UI package is gone (the
+  TUI keeps the five notification sounds it actually played), stray and empty
+  files are removed, and the Docker context skips test fixtures so the image no
+  longer carries a test suite.
+- Dependabot proposes minor and patch updates only. Major bumps change the TUI and
+  model APIs and invalidate the versions pinned in `engine/patches/`, so they are
+  done by hand.
 
 ### Fixed
 
 - A missing or stopped Docker daemon no longer ends in a Python traceback. The
-  launcher probes `docker info` before it touches state and stops with one
-  sentence that names the problem and the fix; Docker calls in the container
-  reaping and image-label paths also tolerate a missing binary. `--console` and
+  launcher probes `docker info` first and stops with one sentence that says
+  whether Docker is missing or its daemon is down. Docker calls in the container
+  reaping and image-label paths also tolerate a missing binary; `--console` and
   `--repair-db` keep working without a daemon.
+
+### Security
+
+- Patched the advisories that had a compatible fix: dompurify 3.4.17 (critical
+  `SAFE_FOR_TEMPLATES` bypass), vite 7.3.7 and body-parser 2.4.0 (high), zod
+  4.6.7 for every zod 4 consumer, and seroval 1.6.12. Three families stay pinned
+  with the reason recorded next to the CI audit: the MCP SDK version the
+  `determineScope` patch targets, `toml` 4.x which effect allows, and the EOL
+  zod 3 line pulled by third-party SDKs.
 
 ## [0.1.1] - 2026-10-29
 
