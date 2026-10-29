@@ -12,7 +12,7 @@
 FROM debian:stable-slim
 
 ENV DEBIAN_FRONTEND=noninteractive \
-    PATH="/usr/local/bin:/root/.bun/bin:/root/go/bin:/usr/local/go/bin:${PATH}" \
+    PATH="/usr/local/bin:/root/go/bin:/usr/local/go/bin:${PATH}" \
     GOBIN=/usr/local/bin
 
 # core toolkit + package managers (for install-on-demand) + build deps for node-pty
@@ -23,13 +23,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       ffuf gobuster whatweb sqlmap hydra \
     && rm -rf /var/lib/apt/lists/*
 
-# bun runtime (runs the engine from source)
+# bun runtime (runs the engine from source), downloaded and verified by checksum
 ARG BUN_VERSION=1.4.2
-RUN curl -fsSL https://bun.sh/install | bash -s -- "bun-v${BUN_VERSION}"
+RUN set -eux; \
+    arch="$(dpkg --print-architecture)"; \
+    case "$arch" in \
+      amd64) asset="bun-linux-x64.zip"; sum="36368faef7527875d5ffa52e53cd48021741f2a83eb6208a8dd64068d422a913" ;; \
+      arm64) asset="bun-linux-aarch64.zip"; sum="54328bbc2d9c8e0c9f892c544d66c57a83b84139e34909e5ee81758f1ac8fda7" ;; \
+      *) echo "Unsupported architecture: ${arch}" >&2; exit 1 ;; \
+    esac; \
+    curl -fsSL "https://github.com/oven-sh/bun/releases/download/bun-v${BUN_VERSION}/${asset}" -o /tmp/bun.zip; \
+    echo "${sum}  /tmp/bun.zip" | sha256sum -c -; \
+    unzip -q /tmp/bun.zip -d /tmp/bun; \
+    install -m 0755 "/tmp/bun/${asset%.zip}/bun" /usr/local/bin/bun; \
+    rm -rf /tmp/bun /tmp/bun.zip; \
+    bun --version
 
 # forked engine source + its deps
 COPY engine/ /opt/grepleaks/engine/
-RUN cd /opt/grepleaks/engine && /root/.bun/bin/bun install --frozen-lockfile \
+RUN cd /opt/grepleaks/engine && bun install --frozen-lockfile \
     && rm -rf /root/.bun/install/cache
 
 # `grepleaks` launcher. Must start bun with cwd = packages/opencode so bun picks
