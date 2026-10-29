@@ -7,6 +7,7 @@ import os
 import re
 from pathlib import Path
 import secrets
+import shutil
 import signal
 import sqlite3
 import subprocess
@@ -151,15 +152,99 @@ def update_command(ref=None):
     return [sys.executable, str(installer), "--repository", repository, "--ref", ref]
 
 
-def run_update():
+def run_update(ref=None):
     try:
-        command_line = update_command()
+        command_line = update_command(ref)
     except ValueError as error:
         print(f"Grepleaks: {error}", file=sys.stderr)
         return 1
     ref = command_line[command_line.index("--ref") + 1]
     print(f"Grepleaks: updating to {ref} and rebuilding the tool image…", file=sys.stderr, flush=True)
     return subprocess.call(command_line, cwd=str(ROOT), env=dict(os.environ))
+
+
+UPDATE_CHECK_SECONDS = 24 * 3600
+
+
+def parse_version(tag):
+    match = re.fullmatch(r"v?(\d+)\.(\d+)\.(\d+)", (tag or "").strip())
+    return tuple(int(part) for part in match.groups()) if match else None
+
+
+def cached_latest_release(state, repository):
+    """One GitHub call a day at most: startup must not wait on the network."""
+    cache = state / "update-check.json"
+    try:
+        saved = json.loads(cache.read_text())
+        if time.time() - float(saved["checked_at"]) < UPDATE_CHECK_SECONDS:
+            tag = saved.get("tag")
+            if isinstance(tag, str):
+                return tag
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    tag = latest_release(repository)
+    try:
+        cache.write_text(json.dumps({"checked_at": time.time(), "tag": tag}))
+    except OSError:
+        pass
+    return tag
+
+
+def notice_box(lines, width=70):
+    inner = width - 4
+    out = ["┌" + "─" * (width - 2) + "┐"]
+    out += ["│ " + line[:inner].ljust(inner) + " │" for line in lines]
+    out.append("└" + "─" * (width - 2) + "┘")
+    return "\n".join(out)
+
+
+def notify_update(state, env):
+    """Offer a newer release before the session starts, with a one-key update."""
+    if env.get("GREPLEAKS_CHECK_UPDATES", "1") == "0":
+        return
+    ref = image_label(image_name(env), "org.grepleaks.ref")
+    current = parse_version(ref or "")
+    if current is None:
+        return  # branch, commit or local build: the user chose that on purpose
+    repository = env.get("GREPLEAKS_UPDATE_REPOSITORY", "grepleaks/grepleaks")
+    try:
+        tag = cached_latest_release(state, repository)
+    except Exception:
+        return
+    newer = parse_version(tag)
+    if newer is None or newer <= current:
+        return
+    declined = state / "update-declined"
+    try:
+        if declined.read_text().strip() == tag:
+            return
+    except OSError:
+        pass
+    if not sys.stdin.isatty() or not sys.stdout.isatty():
+        print(f"Grepleaks: {tag} is available (you are on {ref}). Run `grepleaks update` to install it.", file=sys.stderr)
+        return
+    print()
+    print(notice_box([
+        f"Grepleaks {tag} is available — you are on {ref}.",
+        "Press Enter to update now, or type n to skip this version.",
+    ]))
+    print("  Update now? [Y/n] ", end="", flush=True)
+    try:
+        answer = sys.stdin.readline().strip().lower()
+    except (KeyboardInterrupt, EOFError):
+        answer = "n"
+        print()
+    if answer in ("", "y", "yes", "o", "oui"):
+        print("Grepleaks: updating…", file=sys.stderr, flush=True)
+        if run_update(tag) != 0:
+            print("Grepleaks: the update failed; starting with the current version.", file=sys.stderr)
+            return
+        print("Grepleaks: updated. Starting the new version.", file=sys.stderr, flush=True)
+        return
+    try:
+        declined.write_text(tag)
+    except OSError:
+        pass
 
 
 def refresh_in_background(state, env):
@@ -328,6 +413,8 @@ def main():
         return repair_database(state)
     if args.host_bridge:
         env["GREPLEAKS_HOST_TOKEN"] = secrets.token_urlsafe(48)
+    if args.command not in (["--version"], ["-v"]):
+        notify_update(state, env)
     args.container_name = "grepleaks-" + secrets.token_hex(6)
     try:
         if args.command not in (["--version"], ["-v"]):

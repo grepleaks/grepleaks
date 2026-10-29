@@ -55,6 +55,12 @@ and use its `./grepleaks` / `.\grepleaks.cmd` launcher instead.
 image with the latest tools, then exits. Set `GREPLEAKS_UPDATE_REF` to pin
 another release, a commit, or `main`.
 
+When a newer release exists, the launcher announces it before the session starts:
+press **Enter** to update there and then, or `n` to skip that version (it is not
+offered again until the next release). The check runs at most once a day, never
+holds startup on the network, and stays quiet on images built from a branch,
+a commit or a local checkout. `GREPLEAKS_CHECK_UPDATES=0` turns it off.
+
 The launcher also refreshes the image on its own. When the image is more than
 seven days old it rebuilds it in the background at startup **from the ref it was
 installed from**: the tools move to their current versions, the engine stays where
