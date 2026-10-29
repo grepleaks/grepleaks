@@ -7,6 +7,36 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 
+def permissions():
+    """Effective tool policy.
+
+    The state directories are outside the workspace, so `read`, `grep` and
+    `glob` must never inspect them without a prompt. They hold the provider
+    credential, the loaded config and session data. Staged artifacts are the
+    only external path the agent may read freely.
+    """
+    sensitive = {
+        "/var/lib/grepleaks/data/**": "deny",
+        "/var/lib/grepleaks/config/**": "deny",
+        "/var/lib/grepleaks/state/**": "deny",
+        "/run/grepleaks/**": "deny",
+    }
+    return {
+        "*": "ask",
+        # Keep the upstream .env guard: reading a real .env should be a decision.
+        "read": {"*": "allow", "*.env": "ask", "*.env.*": "ask", "*.env.example": "allow", **sensitive},
+        "glob": "allow",
+        "grep": "allow",
+        "list": "allow",
+        "skill": "allow",
+        "question": "allow",
+        "external_directory": {
+            "/var/lib/grepleaks/exchange/**": "allow",
+            **sensitive,
+        },
+    }
+
+
 def configuration(env):
     if env.get("OPENCODE_CONFIG_CONTENT"):
         result = json.loads(env["OPENCODE_CONFIG_CONTENT"])
@@ -52,7 +82,7 @@ def configuration(env):
             "options": {"baseURL": endpoint, "apiKey": "{env:" + prefix + "_API_KEY}"},
             "models": {model: {"name": model}},
         }},
-        "permission": {"*": "ask", "read": "allow", "glob": "allow", "grep": "allow", "list": "allow", "skill": "allow", "question": "allow"},
+        "permission": permissions(),
         "skills": {"paths": ["/opt/grepleaks/skills"]},
         "instructions": ["/opt/grepleaks/AGENTS.md"],
     }
@@ -67,7 +97,7 @@ def base_configuration():
         "disabled_providers": ["opencode", "opencode-go"],
         "compaction": {"auto": True, "prune": True},
         "agent": {"build": {"prompt": "You are Grepleaks, an expert penetration tester and cybersecurity analyst working with an authorized operator. Follow the Grepleaks mission, tool lifecycle and action-explanation instructions supplied in the system context."}},
-        "permission": {"*": "ask", "read": "allow", "glob": "allow", "grep": "allow", "list": "allow", "skill": "allow", "question": "allow"},
+        "permission": permissions(),
         "skills": {"paths": ["/opt/grepleaks/skills"]},
         "instructions": ["/opt/grepleaks/AGENTS.md"],
     }

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Per-user installer. No third-party Python dependencies or administrator access."""
 import argparse
+import hashlib
+import hmac
 import os
 import ssl
 from pathlib import Path
@@ -16,7 +18,7 @@ import zipfile
 
 
 RUNTIME = (
-    "scripts/launch.py", "host/bridge.py", "host/stage.py", "docker/config.py",
+    "scripts/launch.py", "scripts/repair-db.py", "host/bridge.py", "host/stage.py", "docker/config.py",
     "LICENSE", "THIRD_PARTY_NOTICES.md",
 )
 MARKER = "# Grepleaks user installation"
@@ -177,9 +179,20 @@ def main():
     origin.add_argument("--source", type=Path, help="Install from a local checkout")
     origin.add_argument("--repository", help="GitHub owner/repository")
     parser.add_argument("--ref", default="main", help="Git branch, tag or commit (default: main)")
+    parser.add_argument("--sha256", help="Expected SHA-256 of the downloaded codeload source ZIP")
     args = parser.parse_args()
     if sys.version_info < (3, 10):
         parser.error("Python 3.10+ is required")
+    if args.source and args.sha256:
+        parser.error("--sha256 applies only with --repository")
+    if args.sha256 and not re.fullmatch(r"[0-9a-fA-F]{64}", args.sha256):
+        parser.error("--sha256 must be a 64-character hexadecimal digest")
+    if args.repository and args.ref == "main" and not args.sha256:
+        print(
+            "Grepleaks: 'main' is a moving branch. Pin --ref to a release tag and pass "
+            "--sha256 for a verifiable install. See INSTALL.md.",
+            file=sys.stderr,
+        )
     try:
         subprocess.run(["docker", "info"], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         with tempfile.TemporaryDirectory(prefix="grepleaks-install-") as tmp:
@@ -190,6 +203,10 @@ def main():
                 archive = Path(tmp) / "source.zip"
                 print("Downloading Grepleaks…", flush=True)
                 fetch(f"https://codeload.github.com/{args.repository}/zip/{args.ref}", archive)
+                if args.sha256:
+                    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+                    if not hmac.compare_digest(digest, args.sha256.lower()):
+                        raise ValueError("Source archive checksum does not match --sha256")
                 unpacked = Path(tmp) / "source"
                 unpacked.mkdir()
                 source = extract(archive, unpacked)

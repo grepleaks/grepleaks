@@ -1,7 +1,17 @@
+import { readFileSync } from "node:fs"
 import { tool, type Plugin } from "@opencode-ai/plugin"
 
+const readHostToken = () => {
+  if (process.env.GREPLEAKS_HOST_TOKEN) return process.env.GREPLEAKS_HOST_TOKEN
+  try {
+    return readFileSync("/run/grepleaks/host-token", "utf8").trim()
+  } catch {
+    return ""
+  }
+}
+
 export const GrepleaksHost: Plugin = async () => {
-  const token = process.env.GREPLEAKS_HOST_TOKEN
+  const token = readHostToken()
   if (!token) return {}
   const call = async (route: string, data: unknown, abort: AbortSignal) => {
     const response = await fetch(`http://127.0.0.1:8788${route}`, {

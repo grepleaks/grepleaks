@@ -1,6 +1,8 @@
 param(
     [string]$Repository = "",
-    [string]$Ref = "main"
+    [string]$Ref = "main",
+    [string]$Sha256 = "",
+    [string]$InstallerSha256 = ""
 )
 $ErrorActionPreference = "Stop"
 $python = if (Get-Command py -ErrorAction SilentlyContinue) { "py" } else { "python" }
@@ -13,7 +15,13 @@ try {
         }
         $temporary = [System.IO.Path]::GetTempFileName()
         Invoke-WebRequest -UseBasicParsing "https://raw.githubusercontent.com/$Repository/$Ref/scripts/install.py" -OutFile $temporary
-        & $python @pythonArgs $temporary --repository $Repository --ref $Ref
+        if ($InstallerSha256) {
+            $actual = (Get-FileHash -Algorithm SHA256 -LiteralPath $temporary).Hash.ToLower()
+            if ($actual -ne $InstallerSha256.ToLower()) { throw "install.py checksum does not match -InstallerSha256" }
+        }
+        $installArgs = @("--repository", $Repository, "--ref", $Ref)
+        if ($Sha256) { $installArgs += @("--sha256", $Sha256) }
+        & $python @pythonArgs $temporary @installArgs
     } elseif ($PSScriptRoot) {
         & $python @pythonArgs "$PSScriptRoot/scripts/install.py" --source $PSScriptRoot
     } else {

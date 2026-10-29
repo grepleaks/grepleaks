@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import platform
 import queue
+import re
 import secrets
 import signal
 import subprocess
@@ -18,6 +19,28 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 LIMIT = 65536
+
+SECRET_ENV = re.compile(
+    r"(API_KEY|APIKEY|_TOKEN$|_SECRET$|_PASSWORD$|^AWS_|^AZURE_|^GOOGLE_|^GCP_|"
+    r"^GITHUB_TOKEN$|^GH_TOKEN$|^NPM_TOKEN$|^SSH_AUTH_SOCK$|^OPENCODE_|^GREPLEAKS_|^BYOK_|"
+    r"^DATABASE_URL$|^PGPASSWORD$|^REDIS_URL$|^MONGO_URL$|^STRIPE_|^SENTRY_|^SLACK_|^DISCORD_|^TELEGRAM_)",
+    re.IGNORECASE,
+)
+
+
+def safe_env():
+    """Host commands keep the user's normal environment, minus credentials.
+
+    The command is approved individually, but it must not start with every
+    secret exported in the launcher's shell. Opt a variable back in with
+    GREPLEAKS_HOST_ENV_ALLOW=NAME[,NAME].
+    """
+    allow = {name for name in os.environ.get("GREPLEAKS_HOST_ENV_ALLOW", "").split(",") if name}
+    return {
+        key: value
+        for key, value in os.environ.items()
+        if key in allow or not SECRET_ENV.search(key)
+    }
 
 def validate(command):
     argv = command.get("argv")
@@ -39,7 +62,7 @@ def execute(command, workspace, stop):
     directory = Path(cwd or workspace).expanduser().resolve()
     if not directory.is_dir():
         return {"error": "Host working directory does not exist"}
-    env = {key: value for key, value in os.environ.items() if not key.startswith(("GREPLEAKS_HOST_", "BYOK_", "OPENCODE_CONFIG_CONTENT", "GREPLEAKS_API_"))}
+    env = safe_env()
     with tempfile.TemporaryFile() as output:
         options = {"start_new_session": True} if os.name != "nt" else {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}
         try:

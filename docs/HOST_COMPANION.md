@@ -1,12 +1,11 @@
 # Host companion (preview)
 
 The companion lets the agent request commands on macOS, Windows or Linux while
-keeping Linux pentest tools in Docker. It starts automatically with the standard launcher and runs as the signed-in user,
-without requesting administrator/root elevation. It does not bypass OS privacy, hardware or privilege
-requirements.
+keeping Linux pentest tools in Docker. It is opt-in: pass `--host-bridge` and it
+runs as the signed-in user, without requesting administrator/root elevation. It
+does not bypass OS privacy, hardware or privilege requirements.
 
-The companion is enabled by default. `--host-bridge` remains a compatible explicit
-flag; use `--no-host-bridge` to disable it. Host commands retain their approval
+The default launcher is container-only. Host commands retain their approval
 flow. Help and version queries do not start a companion.
 
 ## One launch
@@ -14,13 +13,13 @@ flow. Help and version queries do not start a companion.
 Install Docker and Python 3.10+ once, then use:
 
 ```bash
-./grepleaks --workspace /path/to/engagement
+./grepleaks --host-bridge --workspace /path/to/engagement
 ```
 
 On native Windows (Python launcher and Docker Desktop installed):
 
 ```bat
-grepleaks.cmd --workspace C:\Engagements
+grepleaks.cmd --host-bridge --workspace C:\Engagements
 ```
 
 No separate terminal, pairing code or permanent API key is needed. The launcher
@@ -34,6 +33,11 @@ selecting commands. `host_run` presents a permission request labelled HOST in th
 usual TUI; there is no second host-terminal confirmation. Arguments are passed
 without an implicit shell. A shell requires an explicit argv such as the actual
 platform's shell executable. Output and execution time are bounded.
+
+Host commands inherit the user's normal environment with credential-looking
+variables removed (`*_TOKEN`, `*_SECRET`, `*_PASSWORD`, `*_API_KEY`, `AWS_*`,
+`GITHUB_TOKEN`, `SSH_AUTH_SOCK`, and similar). Opt a variable back in when a
+workflow needs it, for example `GREPLEAKS_HOST_ENV_ALLOW=SSH_AUTH_SOCK`.
 
 ## Analyze any host file or directory inside Docker
 

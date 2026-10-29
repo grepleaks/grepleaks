@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Cross-platform launcher. Host companion is enabled by default and paired for one session."""
+"""Cross-platform launcher. The host companion is opt-in via --host-bridge."""
 import argparse
 import os
 from pathlib import Path
 import secrets
 import signal
+import sqlite3
 import subprocess
 import sys
 import threading
@@ -16,6 +17,74 @@ from bridge import worker
 sys.path.insert(0, str(ROOT / "docker"))
 from config import configuration
 
+_state_lock = None
+
+
+def state_directory(env):
+    return Path(env.get("GREPLEAKS_STATE_DIR") or Path.home() / ".grepleaks" / "state").expanduser().resolve()
+
+
+def acquire_state_lock(state):
+    """Keep one launcher per state directory.
+
+    Two containers writing the same SQLite database can corrupt it. The lock is
+    held by this process and released by the OS on exit or crash.
+    """
+    global _state_lock
+    if _state_lock is not None:
+        return _state_lock
+    handle = (state / ".launcher.lock").open("a+")
+    try:
+        if os.name == "nt":
+            import msvcrt
+            handle.seek(0, os.SEEK_END)
+            if handle.tell() == 0:
+                handle.write("0")
+                handle.flush()
+            handle.seek(0)
+            msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+        else:
+            import fcntl
+            fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except OSError:
+        handle.close()
+        raise ValueError(
+            "Another Grepleaks session is already using this state directory. "
+            "Close it, or set GREPLEAKS_STATE_DIR to a different directory."
+        ) from None
+    _state_lock = handle
+    return handle
+
+
+def check_database(state):
+    database = state / "data" / "opencode" / "opencode-local.db"
+    if not database.is_file():
+        return
+    try:
+        with sqlite3.connect(database) as connection:
+            result = connection.execute("pragma quick_check").fetchone()
+    except sqlite3.OperationalError as error:
+        if "locked" in str(error).lower():
+            raise ValueError("The session database is locked; close other Grepleaks sessions and retry.") from None
+        raise ValueError(f"The session database cannot be opened: {database}\nRun `grepleaks --repair-db`.") from None
+    except sqlite3.DatabaseError:
+        raise ValueError(
+            f"The session database is malformed: {database}\n"
+            "Run `grepleaks --repair-db` to back it up and rebuild it. Engagement files are untouched."
+        ) from None
+    if result and result[0] != "ok":
+        raise ValueError(
+            f"The session database is malformed: {database}\n"
+            "Run `grepleaks --repair-db` to back it up and rebuild it. Engagement files are untouched."
+        )
+
+
+def repair_database(state):
+    script = ROOT / "scripts" / "repair-db.py"
+    if not script.is_file():
+        raise ValueError("The repair script is missing from this installation.")
+    return subprocess.call([sys.executable, str(script), "--state", str(state)])
+
 
 def configure(env, interactive):
     try:
@@ -24,7 +93,7 @@ def configure(env, interactive):
         raise ValueError("Invalid provider configuration. Check the API URL (HTTP(S), no embedded credentials) or OPENCODE_CONFIG_CONTENT. See INSTALL.md.") from None
 
 
-def command(args, env, terminal):
+def command(args, env, terminal, state):
     result = ["docker", "run", "--rm", "-i"]
     if terminal: result.append("-t")
     result += ["--add-host", "host.docker.internal:host-gateway"]
@@ -34,9 +103,6 @@ def command(args, env, terminal):
         path = Path(source).expanduser().resolve()
         if not path.is_dir() or "," in str(path): raise ValueError("Mount source must be an existing directory without commas")
         result.extend(["--mount", f"type=bind,src={path},dst={destination}" + (",readonly" if readonly else "")])
-    state = Path(env.get("GREPLEAKS_STATE_DIR") or Path.home() / ".grepleaks" / "state").expanduser().resolve()
-    state.mkdir(mode=0o700, parents=True, exist_ok=True)
-    if os.name != "nt": state.chmod(0o700)
     args.exchange = state / "exchange"
     args.exchange.mkdir(mode=0o700, exist_ok=True)
     mount(state, "/var/lib/grepleaks")
@@ -59,8 +125,9 @@ def command(args, env, terminal):
         port = int(env.get("GREPLEAKS_PORT", "4096"))
         if not 1 <= port <= 65535: raise ValueError("Invalid port")
         result += ["-p", f"127.0.0.1:{port}:4096"]
+    result += ["--name", args.container_name]
     if args.host_bridge:
-        result += ["--name", args.container_name, "-p", "127.0.0.1::8788"]
+        result += ["-p", "127.0.0.1::8788"]
     return result + [env.get("GREPLEAKS_IMAGE", "grepleaks:local")] + args.command
 
 
@@ -72,10 +139,11 @@ def main():
     parser.add_argument("--dev", action="store_true", help="Mount local sources read-only; restart after edits")
     parser.add_argument("--workspace", help="Existing directory mounted read-write at /engagement")
     parser.add_argument("--host-access", action="store_true", help="Expose home or GREPLEAKS_HOST_ROOT read-write at /host")
+    parser.add_argument("--repair-db", action="store_true", help="Back up and rebuild the session database")
     bridge = parser.add_mutually_exclusive_group()
-    bridge.add_argument("--host-bridge", dest="host_bridge", action="store_true", help="Enable the host companion (default)")
-    bridge.add_argument("--no-host-bridge", dest="host_bridge", action="store_false", help="Disable commands on the host; use the container only")
-    parser.set_defaults(host_bridge=True)
+    bridge.add_argument("--host-bridge", dest="host_bridge", action="store_true", help="Enable the host companion: commands on the real host, after approval")
+    bridge.add_argument("--no-host-bridge", dest="host_bridge", action="store_false", help="Disable the host companion (default); use the container only")
+    parser.set_defaults(host_bridge=False)
     parser.add_argument("command", nargs=argparse.REMAINDER)
     args, forwarded = parser.parse_known_args()
     args.command = forwarded + args.command
@@ -85,13 +153,26 @@ def main():
     env = dict(os.environ)
     # Never reuse a pairing credential from an earlier session.
     env.pop("GREPLEAKS_HOST_TOKEN", None)
+    state = state_directory(env)
+    state.mkdir(mode=0o700, parents=True, exist_ok=True)
+    if os.name != "nt":
+        state.chmod(0o700)
+    try:
+        acquire_state_lock(state)
+    except (ValueError, OSError) as error:
+        print(f"Grepleaks: {error}", file=sys.stderr)
+        return 1
+    if args.repair_db:
+        return repair_database(state)
     if args.host_bridge:
         env["GREPLEAKS_HOST_TOKEN"] = secrets.token_urlsafe(48)
-        args.container_name = "grepleaks-" + secrets.token_hex(6)
+    args.container_name = "grepleaks-" + secrets.token_hex(6)
     try:
+        if args.command not in (["--version"], ["-v"]):
+            check_database(state)
         terminal = sys.stdin.isatty() and sys.stdout.isatty()
         configure(env, terminal)
-        argv = command(args, env, terminal)
+        argv = command(args, env, terminal, state)
     except (EOFError, KeyboardInterrupt):
         print("\nGrepleaks: setup cancelled.", file=sys.stderr); return 130
     except (ValueError, OSError) as error:
@@ -124,8 +205,9 @@ def main():
         return 130
     finally:
         stop.set()
-        if args.host_bridge:
-            subprocess.run(["docker", "stop", "-t", "2", args.container_name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        if args.container_name:
+            print("Grepleaks: closing the session…", file=sys.stderr)
+            subprocess.run(["docker", "stop", "-t", "5", args.container_name], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         if child.poll() is None:
             child.terminate()
             try: child.wait(timeout=5)
