@@ -102,7 +102,7 @@ OK: ... / MISS (fallback): ...
 
 ### 5. Checkpoint with the User
 
-Show the scope file. One question: "Scope confirmé, on part sur quoi en premier — le wildcard ou un sous-domaine précis ?" Then update STATE.md → Phase 1.
+Show the scope file. One question: "Scope confirmed — do we start on the wildcard or on a specific subdomain?" Then update STATE.md → Phase 1.
 
 ## Output
 

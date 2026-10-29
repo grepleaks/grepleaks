@@ -136,9 +136,9 @@ models from **`/models`** in the TUI.
 
 | Model | Best for |
 | :--- | :--- |
-| **`abliterated-model-large-v2`** | Default large model. GLM-5.3, 1M context, reasoning low / high / max. |
-| **`abliterated-model-large`** | Large model. GLM-5.2, 1M context. |
-| **`abliterated-model`** | General purpose. Multimodal, 256K context. |
+| **`abliterated-model-large-v2`** | Default large model. GLM-5.3, 1M context, text only, reasoning low / high / max. |
+| **`abliterated-model-large-flash`** | Fast large model. 1M context, text and images, reasoning off / low / high / max. |
+| **`abliterated-model`** | General purpose. 256K context, text and images. |
 
 All three are unrestricted and support tool calling, which the agent needs to
 drive its tools. The Grepleaks key is issued from your Grepleaks console; you can

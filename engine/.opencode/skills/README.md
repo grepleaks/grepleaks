@@ -1,57 +1,57 @@
-# Bounty Set — skills offensifs web / API / mobile / cloud / LLM
+# Bounty Set — offensive web / API / mobile / cloud / LLM skills
 
-129 skills orientés **offensive** pour du bug bounty et du hacking d'apps/sites : 113 sélectionnés dans les 817 du repo + 16 skills custom (catégorie `custom`) : 8 pour combler les gaps du repo + 8 pour le pipeline d'engagement.
+129 **offensive** skills for bug bounty and app/site hacking: 113 selected from the repo's 817 + 16 custom skills (the `custom` category): 8 filling repo gaps + 8 for the engagement pipeline.
 
-## Pipeline d'engagement (le vrai flux pentest)
+## Engagement pipeline (the actual pentest flow)
 
-**"Ok let's hack X"** → l'orchestrateur prend le relais et enchaîne les phases :
+**"Ok let's hack X"** → the orchestrator takes over and walks the phases:
 
-| Phase | Skill | Artefact produit |
+| Phase | Skill | Artefact produced |
 |---|---|---|
-| Orchestration + état | `orchestrating-end-to-end-web-attack` | `STATE.md` (reprise de session) |
+| Orchestration + state | `orchestrating-end-to-end-web-attack` | `STATE.md` (session resume) |
 | 0. Scope | `establishing-engagement-scope` | `00-scope.md` + workspace |
-| 1. Recon passive | `performing-passive-reconnaissance` | `01-passive/*` (subdomains, CNAMEs, leaks) |
-| 2. Découverte active | `performing-active-discovery` | `02-active/*` (live, crawl, JS mining, candidats) |
-| 3. Inventaire | `building-attack-surface-inventory` | `03-inventory.md` (assets × features) |
-| 4. Plan d'attaque | `planning-prioritized-attack-strategy` | `04-attack-plan.md` (fenêtres → skills, P0-P3) |
-| 5. Exécution | `executing-attack-plan` | `05-execution/` (findings + evidence) |
+| 1. Passive recon | `performing-passive-reconnaissance` | `01-passive/*` (subdomains, CNAMEs, leaks) |
+| 2. Active discovery | `performing-active-discovery` | `02-active/*` (live hosts, crawl, JS mining, candidates) |
+| 3. Inventory | `building-attack-surface-inventory` | `03-inventory.md` (assets × features) |
+| 4. Attack plan | `planning-prioritized-attack-strategy` | `04-attack-plan.md` (windows → skills, P0-P3) |
+| 5. Execution | `executing-attack-plan` | `05-execution/` (findings + evidence) |
 | 6. Reporting | `writing-penetration-test-report` | `06-report.md` |
 
-Chaque phase est **gated** : pas d'artefact = pas de phase suivante. Les découvertes en cours d'exécution bouclent dans l'inventaire/plan. Le skill condensé `performing-attack-surface-mapping-and-planning` reste disponible en **quick mode** (target déjà connu, plan express).
+Every phase is **gated**: no artefact, no next phase. Findings discovered during execution loop back into the inventory and the plan. The condensed `performing-attack-surface-mapping-and-planning` skill stays available as **quick mode** (target already known, express plan).
 
-Chaque entrée est un symlink vers `skills/<name>` (mise à jour via `git pull`).
+Each entry is a symlink to `skills/<name>` (updated with `git pull`).
 
-## Catégories
+## Categories
 
-| Catégorie | Nb | Contenu |
+| Category | Count | Contents |
 |---|---|---|
-| `recon` | 14 | OSINT, sous-domaines, cert transparency, Shodan, urlscan, API discovery, scans |
-| `web` | 46 | OWASP Top 10 complet : SQLi, XSS, SSRF, IDOR/BAC, deserialization, smuggling, HPP, cache poisoning/deception, WAF bypass, CORS, host header, open redirect, clickjacking, CSP, race conditions, subdomain takeover, business logic |
-| `api` | 11 | REST, GraphQL (introspection, depth limit), WebSockets, SOAP, rate limiting, fuzzing, BOLA, API keys |
+| `recon` | 14 | OSINT, subdomains, cert transparency, Shodan, urlscan, API discovery, scans |
+| `web` | 46 | Full OWASP Top 10: SQLi, XSS, SSRF, IDOR/BAC, deserialization, smuggling, HPP, cache poisoning/deception, WAF bypass, CORS, host header, open redirect, clickjacking, CSP, race conditions, subdomain takeover, business logic |
+| `api` | 11 | REST, GraphQL (introspection, depth limits), WebSockets, SOAP, rate limiting, fuzzing, BOLA, API keys |
 | `auth` | 8 | JWT (alg confusion, none, token security), OAuth2/OIDC, device code phishing, Evilginx3 (MFA bypass), hashcat |
-| `components` | 3 | Dependency confusion, SCA, packages npm malveillants |
-| `mobile` | 12 | Android/iOS : pinning bypass, intents, Frida, Objection, MobSF, JADX, stockage local |
+| `components` | 3 | Dependency confusion, SCA, malicious npm packages |
+| `mobile` | 12 | Android/iOS: pinning bypass, intents, Frida, Objection, MobSF, JADX, local storage |
 | `cloud` | 9 | AWS (S3, pacu, ScoutSuite, privesc), Azure storage, Entra ID (ROADtools), MS Graph, cloudfox |
 | `ai` | 8 | Prompt injection (direct/indirect/RAG), system prompt leak, Pyrit, Garak, vector stores, MCP |
 | `general` | 3 | Metasploit, AFL++, binary exploitation |
-| `custom` | 16 | **Pipeline (8)** : orchestrateur + 7 phases (scope, recon passive, discovery active, inventaire, plan, exécution, reporting) · **Gaps (8)** : attack plan condensé (quick mode), file upload, password reset, 2FA bypass, SAML, session management, DOM clobbering/postMessage, HTTP/2 |
+| `custom` | 16 | **Pipeline (8)**: orchestrator + 7 phases (scope, passive recon, active discovery, inventory, plan, execution, reporting) · **Gaps (8)**: condensed attack plan (quick mode), file upload, password reset, 2FA bypass, SAML, session management, DOM clobbering/postMessage, HTTP/2 |
 
-## Couverture OWASP Top 10 (2021)
+## OWASP Top 10 (2021) coverage
 
 - A01 Broken Access Control — 5 skills
-- A02 Cryptographic Failures — audit crypto, stockage mobile, headers, 2FA/SAML (custom)
-- A03 Injection — 12 skills (le plus couvré)
-- A04 Insecure Design — business logic (partiel)
+- A02 Cryptographic Failures — crypto audit, mobile storage, headers, 2FA/SAML (custom)
+- A03 Injection — 12 skills (the largest coverage)
+- A04 Insecure Design — business logic (partial)
 - A05 Security Misconfiguration — headers, CSP, WAF, CORS, cloud
 - A06 Vulnerable Components — 3 skills
 - A07 Identification & Auth Failures — 8 skills + 2FA bypass, password reset, SAML, sessions (custom)
 - A08 Software Integrity — mass assignment, deserialization
-- A09 Logging & Monitoring — exfiltration via erreurs (partiel)
+- A09 Logging & Monitoring — exfiltration through errors (partial)
 - A10 SSRF — 3 skills
 
-## Gaps comblés par les skills custom
+## Gaps closed by the custom skills
 
-- Pipeline complet d'engagement (scope → recon → inventaire → plan → exécution → reporting) → 8 skills du pipeline ci-dessus
+- Full engagement pipeline (scope → recon → inventory → plan → execution → reporting) → the 8 pipeline skills above
 - File upload → `exploiting-file-upload-vulnerabilities`
 - SAML attacks → `exploiting-saml-assertion-vulnerabilities`
 - Password reset flows → `exploiting-password-reset-flaws`
@@ -60,12 +60,12 @@ Chaque entrée est un symlink vers `skills/<name>` (mise à jour via `git pull`)
 - DOM clobbering + postMessage → `exploiting-dom-clobbering-and-postmessage`
 - HTTP/2 attacks (CONTINUATION flood, Rapid Reset, h2c smuggling) → `exploiting-http2-vulnerabilities`
 
-## Gaps restants (classes rares en bounty web, couverts en pratique par les skills voisins)
+## Remaining gaps (rare classes in web bounty, covered in practice by neighbouring skills)
 
-- Web Crypto client-side (nonce reuse, clés faibles) — partiellement dans `performing-cryptographic-audit-of-application`
-- DNS rebinding — technique de bypass SSRF/CORS, abordable via les skills SSRF
+- Client-side Web Crypto (nonce reuse, weak keys) — partly in `performing-cryptographic-audit-of-application`
+- DNS rebinding — an SSRF/CORS bypass technique, approachable through the SSRF skills
 
 ## Usage
 
-Chargé globalement via `~/.claude/skills/bug-bounty` (symlink vers ce dossier).
-L'agent charge le skill pertinent à la demande (progressive disclosure).
+The agent loads the relevant skill on demand (progressive disclosure); each entry in
+this folder is a symlink into `skills/<name>`.

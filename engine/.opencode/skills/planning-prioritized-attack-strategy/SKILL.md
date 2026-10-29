@@ -115,7 +115,7 @@ For every ✅ feature in the inventory, list the vulnerability windows it opens 
 
 ### 5. Checkpoint with the User
 
-Show the plan: P0 list + total estimated time. One question: "On exécute dans cet ordre, ou tu veux qu'on force la main sur une fenêtre en particulier ?" Then STATE.md → Phase 5.
+Show the plan: P0 list + total estimated time. One question: "Do we execute in this order, or do you want to force a specific window first?" Then STATE.md → Phase 5.
 
 ## Output
 

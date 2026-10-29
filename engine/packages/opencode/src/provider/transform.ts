@@ -984,11 +984,16 @@ export function variants(model: Provider.Model): Record<string, Record<string, a
       // variant" command offers the right low/high/max choices.
       if (model.providerID === "grepleaks") {
         const grepleaksId = model.api.id.toLowerCase()
+        // Mirrors abliteration.ai's reasoning table: Large v2 cannot turn
+        // reasoning off, Large Flash can, and the deprecated Large only
+        // offers off / high / max.
         const grepleaksEfforts = grepleaksId.includes("large-v2")
           ? ["low", "high", "max"]
-          : grepleaksId.includes("large")
-            ? ["high", "max"]
-            : ["low", "medium", "high", "max"]
+          : grepleaksId.includes("large-flash")
+            ? ["none", "low", "high", "max"]
+            : grepleaksId.includes("large")
+              ? ["none", "high", "max"]
+              : ["none", "low", "medium", "high", "max"]
         return Object.fromEntries(grepleaksEfforts.map((effort) => [effort, { reasoningEffort: effort }]))
       }
       if (model.api.id.toLowerCase().includes("north-mini-code")) {
