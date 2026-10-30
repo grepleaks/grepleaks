@@ -4,10 +4,10 @@
 
 - A working Docker daemon with Linux containers.
 - Python 3.10+ on the host (`python3` on macOS/Linux; `py -3` on Windows). No third-party Python packages are needed.
-- About **4 GB** of free disk space. The sources are a ~40 MB download; the first
-  install builds the local Docker image (~3 GB: Debian base, core toolkit, Bun
-  runtime and engine dependencies). Check `docker system df` and available
-  host/VM disk space.
+- About **4 GB** of free disk space. The sources are a ~7 MB release archive (a
+  ~34 MB clone); the first install builds the local Docker image (~3 GB: Debian
+  base, core toolkit, Bun runtime and engine dependencies). Check `docker system
+  df` and available host/VM disk space.
 - Internet access for image construction, provider calls and on-demand tool installs.
 - A way to run the model: the **Grepleaks key** (one key for the unrestricted
   models served by our partner abliteration.ai), or an API key, base URL and model

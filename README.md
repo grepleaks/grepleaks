@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/grepleaks-tui-demo.svg" alt="Grepleaks TUI: 120+ pentest skills, 900+ pentest tools. The composer cycles the built-in pentest prompts, then a recon engagement runs end to end and writes a report under /engagement" width="880" />
+  <img src="docs/assets/grepleaks-tui-demo.svg" alt="Grepleaks TUI: 130+ pentest skills, 900+ pentest tools. The composer cycles the built-in pentest prompts, then a recon engagement runs end to end and writes a report under /engagement" width="880" />
 </p>
 
 <p align="center">

@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="880" height="560" viewBox="0 0 880 560" role="img" aria-labelledby="dTitle dDesc">
   <title id="dTitle">Grepleaks terminal demo</title>
-  <desc id="dDesc">The Grepleaks home screen: 120+ pentest skills, 900+ pentest tools. The composer cycles the built-in pentest prompts, then a recon prompt is submitted and the agent plans, runs subfinder, reviews discovered hosts and writes a report under /engagement.</desc>
+  <desc id="dDesc">The Grepleaks home screen: 130+ pentest skills, 900+ pentest tools. The composer cycles the built-in pentest prompts, then a recon prompt is submitted and the agent plans, runs subfinder, reviews discovered hosts and writes a report under /engagement.</desc>
   <defs>
     <linearGradient id="beam" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#22d3ee" stop-opacity="0"/>
@@ -596,7 +596,7 @@
         <rect x="698" y="167" width="2.4" height="8.7"/>
       </g>
     <text x="440.0" y="208.0" text-anchor="middle" font-size="12" letter-spacing="3" class="t-mut">YOUR AI PENTEST ENVIRONMENT</text>
-    <text x="440.0" y="330" text-anchor="middle" font-size="14" font-weight="bold"><tspan class="t-cyan">120+</tspan><tspan class="t-white"> pentest skills</tspan><tspan class="t-mut" font-weight="normal">&#160;&#160;|&#160;&#160;</tspan><tspan class="t-cyan">900+</tspan><tspan class="t-white"> pentest tools</tspan></text>
+    <text x="440.0" y="330" text-anchor="middle" font-size="14" font-weight="bold"><tspan class="t-cyan">130+</tspan><tspan class="t-white"> pentest skills</tspan><tspan class="t-mut" font-weight="normal">&#160;&#160;|&#160;&#160;</tspan><tspan class="t-cyan">900+</tspan><tspan class="t-white"> pentest tools</tspan></text>
 
     <rect x="160" y="420" width="560" height="58" rx="10" fill="#0f1c20" stroke="#16282e"/>
     <g class="idleG"><rect x="176" y="433" width="7" height="13" fill="#22d3ee" class="blinkC"/></g>
@@ -640,7 +640,7 @@
     <text x="618" y="60" font-size="10" class="t-cyand">┌ SESSION</text>
     <text x="618" y="80" font-size="13" font-weight="bold" class="t-white">External attack surface</text>
     <text x="618" y="118" font-size="12" font-weight="bold" class="t-white">▾ Pentest Tools</text>
-    <text x="618" y="136" font-size="10" class="t-mut">922 tools · on demand</text>
+    <text x="618" y="136" font-size="10" class="t-mut">927 tools · on demand</text>
     <text x="618" y="152" font-size="10" class="t-mut">Install → use → clean up</text>
     <g font-size="10">
       <text x="618" y="182" class="t-white">▸ Information Gathering <tspan class="t-mut">118</tspan></text>
