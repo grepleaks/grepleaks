@@ -40,10 +40,14 @@ function generateID(prefix: keyof typeof prefixes, direction: "descending" | "as
 
 function randomBase62(length: number): string {
   const chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+  const limit = 256 - (256 % chars.length)
   let result = ""
-  const bytes = randomBytes(length)
-  for (let i = 0; i < length; i++) {
-    result += chars[bytes[i] % 62]
+  while (result.length < length) {
+    for (const byte of randomBytes(length)) {
+      if (byte >= limit) continue
+      result += chars[byte % chars.length]
+      if (result.length === length) break
+    }
   }
   return result
 }

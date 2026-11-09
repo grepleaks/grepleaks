@@ -208,7 +208,11 @@ export const validateMedia = Effect.fn("ProviderShared.validateMedia")(function*
 export const validateToolFile = (route: string, part: ToolFileContent, supportedMimes: ReadonlySet<string>) =>
   validateMedia(route, { type: "media", mediaType: part.mime, data: part.uri, filename: part.name }, supportedMimes)
 
-export const trimBaseUrl = (value: string) => value.replace(/\/+$/, "")
+export const trimBaseUrl = (value: string) => {
+  let end = value.length
+  while (end > 0 && value.charCodeAt(end - 1) === 47) end--
+  return value.slice(0, end)
+}
 
 export const toolResultText = (part: ToolResultPart) => {
   if (part.result.type === "text") return String(part.result.value)

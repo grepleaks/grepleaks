@@ -1135,7 +1135,12 @@ function isModuleOf(pomContent: string, modulePath: string): boolean {
   if (!normalized) return false
   const modulesBlocks = pomContent.match(/<modules>([\s\S]*?)<\/modules>/g) ?? []
   for (const block of modulesBlocks) {
-    const stripped = block.replace(/<!--[\s\S]*?-->/g, "")
+    let stripped = block
+    while (stripped.includes("<!--")) {
+      const next = stripped.replace(/<!--[\s\S]*?-->/g, "")
+      if (next === stripped) break
+      stripped = next
+    }
     for (const m of stripped.matchAll(/<module>\s*([^<]+?)\s*<\/module>/g)) {
       const decl = m[1].replace(/\\/g, "/").replace(/^\.\//, "").replace(/\/$/, "")
       if (decl === normalized) return true

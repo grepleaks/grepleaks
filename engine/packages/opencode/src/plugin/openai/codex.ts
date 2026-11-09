@@ -21,10 +21,7 @@ interface PkceCodes {
 }
 
 async function generatePKCE(): Promise<PkceCodes> {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
-  const verifier = Array.from(crypto.getRandomValues(new Uint8Array(43)))
-    .map((b) => chars[b % chars.length])
-    .join("")
+  const verifier = base64UrlEncode(crypto.getRandomValues(new Uint8Array(32)).buffer as ArrayBuffer)
   const challenge = base64UrlEncode(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier)))
   return { verifier, challenge }
 }

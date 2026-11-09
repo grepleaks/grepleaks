@@ -1,0 +1,15 @@
+name: "Grepleaks CodeQL config"
+
+# Keep production code in scope, but skip areas that intentionally contain
+# SSRF/XSS fixtures, generated code, or development-only scripts. The
+# run-workspace-server script has no JS/TS extension and otherwise produces a
+# parse warning on every analysis.
+paths-ignore:
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/*.spec.tsx"
+  - "**/test/**"
+  - "**/__tests__/**"
+  - "engine/packages/*/script/**"
+  - "engine/packages/sdk/js/src/v2/gen/**"

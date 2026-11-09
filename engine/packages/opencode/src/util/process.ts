@@ -56,6 +56,11 @@ export class RunFailedError extends Error {
 
 export type Child = ChildProcess & { exited: Promise<number> }
 
+/**
+ * Low-level process launcher. Commands come from the agent/tool layer, which
+ * enforces the operator's permission and scope policy. This helper is not a
+ * sandbox and must not be exposed to untrusted input without those gates.
+ */
 export function spawn(cmd: string[], opts: Options = {}): Child {
   if (cmd.length === 0) throw new Error("Command is required")
   opts.abort?.throwIfAborted()
