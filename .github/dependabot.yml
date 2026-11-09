@@ -3,6 +3,9 @@ version: 2
 # Major bumps are ignored on purpose: they change APIs (opentui, ai-sdk) and
 # invalidate the exact versions pinned in `patchedDependencies` and patches/,
 # so they are done by hand on a branch.
+# 0.x @opentui minors and effect minors are also excluded: they are breaking
+# even though semver calls them minor, and they invalidate engine/patches/.
+# drizzle-orm rc updates are handled manually while the ORM is pre-1.0.
 updates:
   - package-ecosystem: "bun"
     directory: "/engine"
@@ -22,6 +25,12 @@ updates:
       - dependency-name: "*"
         update-types:
           - "version-update:semver-major"
+      - dependency-name: "@opentui/*"
+        update-types:
+          - "version-update:semver-minor"
+      - dependency-name: "effect"
+        update-types:
+          - "version-update:semver-minor"
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
