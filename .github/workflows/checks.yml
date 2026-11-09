@@ -21,8 +21,9 @@ jobs:
           persist-credentials: false
       - run: bash -n grepleaks docker/entrypoint.sh
         if: runner.os != 'Windows'
-      - run: python -m py_compile scripts/install.py scripts/launch.py scripts/repair-db.py scripts/smoke-container.py scripts/smoke-evidence.py
+      - run: python -m py_compile scripts/install.py scripts/launch.py scripts/repair-db.py scripts/smoke-container.py scripts/smoke-evidence.py scripts/test-evaluation-fixtures.py
       - run: python scripts/test-install-runtime.py
+      - run: python scripts/test-evaluation-fixtures.py
   engine:
     runs-on: ubuntu-latest
     timeout-minutes: 30
