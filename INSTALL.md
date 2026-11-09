@@ -18,12 +18,46 @@ On Windows use Docker Desktop and `grepleaks.cmd` from cmd/PowerShell. WSL2 can 
 run the Bash wrapper, but a companion started in WSL executes inside WSL, not on
 the native Windows host. Use the Windows launcher for Windows host commands.
 
+### Container runtime
+
+The installer checks for a working Docker-compatible runtime before it builds
+the image. If Docker is installed but its daemon is stopped, it tries to start
+Colima, Docker Desktop, OrbStack, Rancher Desktop or the Linux Docker service.
+If no runtime is present and the session is interactive, it explains the plan
+and asks `[y/N]` before making any system change:
+
+- **macOS with Homebrew** — `brew install colima docker`, then `colima start`.
+- **Linux** — the distribution package manager (apt/dnf/yum/pacman/zypper/apk),
+  then the Docker service is enabled and your user is added to the `docker`
+  group. `sudo` may ask for your password; log out and back in if the group
+  change is new.
+- **Windows** — `winget install -e --id Docker.DockerDesktop`, then Docker
+  Desktop is started. Windows may ask for elevation.
+
+Non-interactive installs never prompt. Pass `--no-install-runtime` to disable
+the offer, `--yes` to accept it, or `--check-runtime` to print detection as
+JSON. OrbStack, Rancher Desktop and Podman also work when their `docker` CLI
+reports a healthy daemon; Podman needs the docker-compatible CLI.
+
+The installer also stops before building when `docker system df` reports an
+image-store I/O error (for example a corrupted Docker Desktop VM disk), with a
+message asking you to restart or repair Docker.
+
 ## Install the user command
 
 From the downloaded repository, on macOS/Linux (Bash or Zsh):
 
 ```bash
 python3 scripts/install.py --source . && export PATH="$HOME/.local/bin:$PATH"
+```
+
+For unattended setup (accepting the runtime installation prompt if one is
+needed), add `--yes`. To refuse any system change, use
+`--no-install-runtime`; the installer then prints the manual commands and
+stops if no runtime is available.
+
+```bash
+python3 scripts/install.py --source . --yes
 ```
 
 On Windows, in PowerShell:

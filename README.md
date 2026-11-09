@@ -46,6 +46,9 @@ interactive tool cards and pentest-oriented prompt suggestions.
 | **A terminal workspace** | Chat, tool output and a browsable catalog in a TUI built for security work. |
 | **Pentest Tools** | Search the catalog and open tool descriptions before deciding what to use. A catalog entry does not mean the tool is installed. |
 | **Tools on demand** | A core toolkit comes with the image. The agent can install additional compatible tools inside the container when needed. |
+| **Structured findings** | Save findings with request/response evidence, confidence and status under `/engagement/.grepleaks`. |
+| **Verification oracles** | Reproduce SQLi, XSS, SSRF, RCE, path traversal and IDOR with deterministic checks, plus an out-of-band collaborator. |
+| **Reports** | Export markdown, print-ready HTML, JSON or SARIF from the stored findings. |
 | **Your model** | Start with the **Grepleaks key** (unrestricted models from our partner abliteration.ai), or connect any OpenAI-compatible API with your own endpoint, model ID and key. |
 | **Actions you can review** | The default policy asks for permission for actions such as command execution; some operations, including reading files, are allowed. |
 | **An opt-in host companion** | Pass `--host-bridge` to request commands on your actual Mac, Windows or Linux machine when the task needs access beyond the container. |
@@ -58,6 +61,8 @@ You need:
 
 - **Docker**, running and configured for Linux containers. On macOS, Docker Desktop
   or Colima can provide it; Windows uses Docker Desktop; Linux can use Docker Engine.
+  The installer checks for Docker, Colima, OrbStack, Rancher Desktop or Podman, and
+  offers to install Colima or Docker with a `y/N` prompt when none is available.
 - **Python 3.10+** on your machine. No extra Python packages are required.
 - An **OpenAI-compatible model API**: its base URL, model ID and API key.
 - Internet access and about **4 GB** of free disk space. The sources are a small
@@ -213,6 +218,25 @@ Ask it to save the output you want to keep under `/engagement`.
 > Extra tool installations remain disposable. Without `--workspace`, files saved
 > in `/engagement` disappear when the container stops.
 
+## Scope, target auth and reports
+
+Pass `--scope` to enforce an engagement scope and `--auth` to load target
+credentials:
+
+```bash
+grepleaks --scope ./engagements/acme/scope.json --auth ./engagements/acme/auth.json
+```
+
+The scope file is mounted read-only and checked by the verification tools;
+out-of-scope targets are refused. The auth file is mounted read-only and used by
+the HTTP oracles; `auth_status` shows profile labels without printing secrets.
+Both files can also live in `/engagement/.grepleaks/`.
+
+The agent stores findings in `/engagement/.grepleaks/findings.db` and writes
+reports under `/engagement/.grepleaks/reports/`. Ask it to save a finding with
+evidence, verify it, then generate the report. Reports are available as
+markdown, HTML (print-ready), JSON and SARIF.
+
 ## Working with your host
 
 Choose the access the task actually needs:
@@ -301,6 +325,7 @@ More detail, including authenticated headless API mode: [INSTALL.md](INSTALL.md)
 | [Installation](INSTALL.md) | Provider configuration, headless commands and troubleshooting. |
 | [Host access](docs/HOST_ACCESS.md) | Workspace sharing, host mounts and VM limits. |
 | [Host companion](docs/HOST_COMPANION.md) | Native host commands, pairing and the trust model. |
+| [Evidence and reports](docs/EVIDENCE.md) | Findings, verification, scope, target auth and report formats. |
 | [Security](SECURITY.md) | Data exposure, permissions and vulnerability reporting. |
 | [Contributing](CONTRIBUTING.md) | Local development, tests and contribution conventions. |
 | [Licensing](docs/LICENSING.md) | Permitted professional use, sharing and the no-resale restriction. |

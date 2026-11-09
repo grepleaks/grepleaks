@@ -130,11 +130,29 @@ def main():
             child = subprocess.Popen(launcher + bridge + ["--workspace", directory, "serve"], cwd=directory, env=env, stdin=subprocess.DEVNULL, stdout=log, stderr=log)
             try:
                 wait_for(lambda: api("/global/health"), "authenticated server health")
-                if not args.no_host_bridge:
-                    # The first host_run fails "not connected" if prompted before pairing completes.
-                    wait_for(lambda: "host companion paired" in logpath.read_text(errors="ignore"), "host companion pairing")
                 ids = subprocess.run(["docker", "ps", "-q", "--filter", f"publish={port}"], capture_output=True, text=True, check=True).stdout.split()
                 check(len(ids) == 1, ids)
+                if not args.no_host_bridge:
+                    # Probe the bridge readiness directly instead of relying on a log line.
+                    def host_ready():
+                        probe = subprocess.run(
+                            [
+                                "docker",
+                                "exec",
+                                ids[0],
+                                "python3",
+                                "-c",
+                                "import json,urllib.request; t=open('/run/grepleaks/host-token').read().strip(); "
+                                "r=urllib.request.Request('http://127.0.0.1:8788/info', data=b'{}', "
+                                "headers={'Authorization':'Bearer '+t,'Content-Type':'application/json'}); "
+                                "print(json.load(urllib.request.urlopen(r, timeout=5)).get('connected'))",
+                            ],
+                            capture_output=True,
+                            text=True,
+                        )
+                        return probe.returncode == 0 and probe.stdout.strip() == "True"
+
+                    wait_for(host_ready, "host companion pairing")
                 details = json.loads(subprocess.run(["docker", "inspect", ids[0]], capture_output=True, text=True, check=True).stdout)[0]
                 check(not details["HostConfig"]["Privileged"], 'E2E check failed at 126')
                 check(all(binding["HostIp"] == "127.0.0.1" for bindings in details["HostConfig"]["PortBindings"].values() for binding in bindings), 'E2E check failed at 127')

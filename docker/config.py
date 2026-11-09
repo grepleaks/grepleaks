@@ -30,6 +30,15 @@ def permissions():
         "list": "allow",
         "skill": "allow",
         "question": "allow",
+        # Evidence tools are local bookkeeping. Network verification stays explicit.
+        "save_finding": "allow",
+        "list_findings": "allow",
+        "get_finding": "allow",
+        "generate_report": "allow",
+        "scope_check": "allow",
+        "collaborator": "allow",
+        "auth_status": "allow",
+        "verify_finding": "ask",
         "external_directory": {
             "/var/lib/grepleaks/exchange/**": "allow",
             **sensitive,

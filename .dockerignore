@@ -29,6 +29,7 @@ engine/packages/sdk/js/test
 engine/artifacts
 engine/perf
 .grepleaks-smoke-*
+.grepleaks-evidence-*
 
 .grepleaks-models-*
 .grepleaks-tui-*

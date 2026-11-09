@@ -2,7 +2,9 @@ param(
     [string]$Repository = "",
     [string]$Ref = "main",
     [string]$Sha256 = "",
-    [string]$InstallerSha256 = ""
+    [string]$InstallerSha256 = "",
+    [switch]$Yes,
+    [switch]$NoInstallRuntime
 )
 $ErrorActionPreference = "Stop"
 $python = if (Get-Command py -ErrorAction SilentlyContinue) { "py" } else { "python" }
@@ -21,9 +23,14 @@ try {
         }
         $installArgs = @("--repository", $Repository, "--ref", $Ref)
         if ($Sha256) { $installArgs += @("--sha256", $Sha256) }
+        if ($Yes) { $installArgs += "--yes" }
+        if ($NoInstallRuntime) { $installArgs += "--no-install-runtime" }
         & $python @pythonArgs $temporary @installArgs
     } elseif ($PSScriptRoot) {
-        & $python @pythonArgs "$PSScriptRoot/scripts/install.py" --source $PSScriptRoot
+        $sourceArgs = @("--source", $PSScriptRoot)
+        if ($Yes) { $sourceArgs += "--yes" }
+        if ($NoInstallRuntime) { $sourceArgs += "--no-install-runtime" }
+        & $python @pythonArgs "$PSScriptRoot/scripts/install.py" @sourceArgs
     } else {
         throw "Supply -Repository owner/repository."
     }

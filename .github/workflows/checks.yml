@@ -21,7 +21,8 @@ jobs:
           persist-credentials: false
       - run: bash -n grepleaks docker/entrypoint.sh
         if: runner.os != 'Windows'
-      - run: python -m py_compile scripts/install.py scripts/launch.py scripts/repair-db.py scripts/smoke-container.py
+      - run: python -m py_compile scripts/install.py scripts/launch.py scripts/repair-db.py scripts/smoke-container.py scripts/smoke-evidence.py
+      - run: python scripts/test-install-runtime.py
   engine:
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -54,6 +55,8 @@ jobs:
         working-directory: engine/packages/opencode
       - run: bun typecheck
         working-directory: engine/packages/tui
+      - run: bun test src/evidence --timeout 30000
+        working-directory: engine/packages/opencode
       - run: bun test test/provider/provider.test.ts test/provider/transform.test.ts test/plugin/loader-shared.test.ts
         working-directory: engine/packages/opencode
       - run: bun test test/permission test/auth test/session --timeout 30000 --only-failures

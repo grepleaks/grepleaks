@@ -4,13 +4,14 @@ umask 077
 export XDG_CONFIG_HOME=/var/lib/grepleaks/config
 export XDG_DATA_HOME=/var/lib/grepleaks/data
 export XDG_STATE_HOME=/var/lib/grepleaks/state
+export GREPLEAKS_WORKSPACE="${GREPLEAKS_WORKSPACE:-/engagement}"
+mkdir -p /run/grepleaks
+chmod 700 /run/grepleaks
 if [ "${1:-}" = serve ] && [ -z "${OPENCODE_SERVER_PASSWORD:-}" ]; then
   echo 'Grepleaks: OPENCODE_SERVER_PASSWORD is required for serve.' >&2
   exit 1
 fi
 if [ -n "${GREPLEAKS_HOST_TOKEN:-}" ]; then
-  mkdir -p /run/grepleaks
-  chmod 700 /run/grepleaks
   # The plugin reads this file; the container shell environment does not keep
   # the pairing credential. host_bridge.py keeps its own copy from this env.
   printf '%s' "$GREPLEAKS_HOST_TOKEN" > /run/grepleaks/host-token
