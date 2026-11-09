@@ -33,9 +33,18 @@ const patterns = [
 
 const exclusions = [/^(throttling error|service unavailable):/i, /rate limit/i, /too many requests/i]
 
+const isNoBodyStatus = (message: string) => {
+  const prefix = message.match(/^4(?:00|13)/)
+  if (!prefix) return false
+  const rest = message.slice(prefix[0].length).trimStart().toLowerCase()
+  if (rest.startsWith("(no body)")) return true
+  if (!rest.startsWith("status code")) return false
+  return rest.slice("status code".length).trimStart().startsWith("(no body)")
+}
+
 export const isContextOverflow = (message: string) =>
   !exclusions.some((pattern) => pattern.test(message)) &&
-  (patterns.some((pattern) => pattern.test(message)) || /^4(00|13)\s*(status code)?\s*\(no body\)/i.test(message))
+  (patterns.some((pattern) => pattern.test(message)) || isNoBodyStatus(message))
 
 export const isContextOverflowFailure = (failure: unknown) =>
   failure instanceof LLMError

@@ -45,9 +45,16 @@ function normalizeAccount(input: string) {
 
 function generateRandomString(length: number) {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-._~"
-  return Array.from(crypto.getRandomValues(new Uint8Array(length)))
-    .map((b) => chars[b % chars.length])
-    .join("")
+  const limit = 256 - (256 % chars.length)
+  let result = ""
+  while (result.length < length) {
+    for (const byte of crypto.getRandomValues(new Uint8Array(length))) {
+      if (byte >= limit) continue
+      result += chars[byte % chars.length]
+      if (result.length === length) break
+    }
+  }
+  return result
 }
 
 function base64UrlEncode(buffer: ArrayBuffer) {

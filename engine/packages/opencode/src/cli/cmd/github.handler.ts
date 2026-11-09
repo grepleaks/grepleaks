@@ -795,8 +795,24 @@ export const githubRun = Effect.fn("Cli.github.run")(function* (args: { event?: 
         const start = m.index
         const filename = path.basename(url)
 
+        let target: URL
+        try {
+          target = new URL(url)
+        } catch {
+          console.error(`Skipping invalid attachment URL: ${url}`)
+          continue
+        }
+        if (
+          target.protocol !== "https:" ||
+          target.hostname !== "github.com" ||
+          !target.pathname.startsWith("/user-attachments/")
+        ) {
+          console.error(`Skipping unexpected attachment URL: ${url}`)
+          continue
+        }
+
         // Download image
-        const res = await fetch(url, {
+        const res = await fetch(target, {
           headers: {
             Authorization: `Bearer ${appToken}`,
             Accept: "application/vnd.github.v3+json",
