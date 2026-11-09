@@ -134,13 +134,14 @@ def image_name(env):
 
 
 DOCKER_MISSING = (
-    "Docker is not installed. Install Docker Desktop (macOS, Windows) or Docker Engine "
-    "(Linux), then run grepleaks again. See INSTALL.md."
+    "Docker is not installed. Rerun the Grepleaks installer to be offered a runtime "
+    "install, or install Docker Desktop (macOS, Windows) or Docker Engine (Linux), "
+    "then run grepleaks again. See INSTALL.md."
 )
 DOCKER_STOPPED = (
     "Docker is installed but its daemon is not running or not reachable. Start Docker "
-    "Desktop or the docker service (on Linux your user may also need the docker group), "
-    "then run grepleaks again. See INSTALL.md."
+    "Desktop, Colima, OrbStack or the docker service (on Linux your user may also need "
+    "the docker group), then run grepleaks again. See INSTALL.md."
 )
 
 
@@ -506,12 +507,23 @@ def command(args, env, terminal, state):
     result = ["docker", "run", "--rm", "-i"]
     if terminal: result.append("-t")
     result += ["--add-host", "host.docker.internal:host-gateway"]
-    for name in ("GREPLEAKS_API_KEY", "GREPLEAKS_API_URL", "BYOK_API_KEY", "BYOK_BASE_URL", "BYOK_MODEL", "BYOK_PROVIDER_NAME", "OPENCODE_CONFIG_CONTENT", "OPENCODE_SERVER_PASSWORD", "OPENCODE_SERVER_USERNAME", "GREPLEAKS_HOST_TOKEN"):
+    env["GREPLEAKS_WORKSPACE"] = "/engagement"
+    if args.scope:
+        env["GREPLEAKS_SCOPE"] = "/run/grepleaks/scope.json"
+    if args.auth:
+        env["GREPLEAKS_AUTH"] = "/run/grepleaks/auth.json"
+    for name in ("GREPLEAKS_API_KEY", "GREPLEAKS_API_URL", "BYOK_API_KEY", "BYOK_BASE_URL", "BYOK_MODEL", "BYOK_PROVIDER_NAME", "OPENCODE_CONFIG_CONTENT", "OPENCODE_SERVER_PASSWORD", "OPENCODE_SERVER_USERNAME", "GREPLEAKS_HOST_TOKEN", "GREPLEAKS_OAST_URL", "GREPLEAKS_WORKSPACE", "GREPLEAKS_REQUIRE_SCOPE"):
         if env.get(name): result += ["-e", name]
+    if args.scope: result += ["-e", "GREPLEAKS_SCOPE"]
+    if args.auth: result += ["-e", "GREPLEAKS_AUTH"]
     def mount(source, destination, readonly=False):
         path = Path(source).expanduser().resolve()
         if not path.is_dir() or "," in str(path): raise ValueError("Mount source must be an existing directory without commas")
         result.extend(["--mount", f"type=bind,src={path},dst={destination}" + (",readonly" if readonly else "")])
+    def mount_file(source, destination):
+        path = Path(source).expanduser().resolve()
+        if not path.is_file() or "," in str(path): raise ValueError(f"File mount source must be an existing file without commas: {source}")
+        result.extend(["--mount", f"type=bind,src={path},dst={destination},readonly"])
     args.exchange = state / "exchange"
     args.exchange.mkdir(mode=0o700, exist_ok=True)
     mount(state, "/var/lib/grepleaks")
@@ -519,6 +531,10 @@ def command(args, env, terminal, state):
     if not args.workspace:
         workspace.mkdir(mode=0o700, exist_ok=True)
     mount(workspace, "/engagement")
+    if args.scope:
+        mount_file(args.scope, "/run/grepleaks/scope.json")
+    if args.auth:
+        mount_file(args.auth, "/run/grepleaks/auth.json")
     if args.host_access:
         source = env.get("GREPLEAKS_HOST_ROOT") or str(Path.home())
         mount(source, "/host")
@@ -550,6 +566,8 @@ def main():
     parser.add_argument("--dev", action="store_true", help="Mount local sources read-only; restart after edits")
     parser.add_argument("--workspace", help="Existing directory mounted read-write at /engagement")
     parser.add_argument("--host-access", action="store_true", help="Expose home or GREPLEAKS_HOST_ROOT read-write at /host")
+    parser.add_argument("--scope", help="Engagement scope JSON file, mounted read-only and enforced by the evidence tools")
+    parser.add_argument("--auth", help="Target authentication JSON file, mounted read-only")
     parser.add_argument("--repair-db", action="store_true", help="Back up and rebuild the session database")
     parser.add_argument("--update", action="store_true", help="Rebuild the tool image with the latest tools, then exit")
     parser.add_argument("--console", action="store_true", help="Open the Grepleaks console in your browser, then exit")

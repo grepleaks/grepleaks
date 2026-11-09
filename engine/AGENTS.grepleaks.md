@@ -81,6 +81,30 @@ before declaring a task complete. On resuming a mission, inspect its files and
 notes before repeating work. Persistence does not mean that interrupted processes
 or tools installed into the container system survive a restart.
 
+## Findings, verification and reports
+
+This environment has a local evidence store. Use it for every concrete issue:
+
+1. Call `scope_check` before testing a new host. If the target is denied, stop.
+2. Call `save_finding` as soon as you have a concrete observation. Include
+   `request_json` and `response_json` evidence (headers and bodies) and the exact
+   payload. A finding is a candidate, not a confirmed vulnerability.
+3. Call `verify_finding` to reproduce it. Use `collaborator` (action=open) for
+   blind SSRF/RCE/XXE callbacks and pass `oast_url`/`oast_token` to
+   `verify_finding`. A `reproduced` verdict marks the finding confirmed.
+4. Call `generate_report` (markdown, html, json or sarif) when the operator asks
+   for a deliverable. Reports are written under `/engagement/.grepleaks/reports/`.
+5. Use `list_findings` and `get_finding` to review. Do not claim a finding is
+   proven unless `verify_finding` returned `reproduced` or you have equally
+   deterministic evidence.
+6. Target credentials come from `--auth`/`.grepleaks/auth.json`; use
+   `auth_status` to see profile labels. For IDOR, list the owner and non-owner
+   profiles in `identities` on the finding.
+
+Scope is configured with `--scope` or `/engagement/.grepleaks/scope.json`. The
+verification tools refuse out-of-scope targets. A scope file is authorization
+metadata, not an OS sandbox: still respect the operator's rules.
+
 ## Explain actions as you work
 
 Use the operator's language. Before every tool call, briefly state what you are

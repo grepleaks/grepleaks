@@ -29,6 +29,14 @@ import { WebSearchTool } from "./websearch"
 import { LspTool } from "./lsp"
 import * as Truncate from "./truncate"
 import { ApplyPatchTool } from "./apply_patch"
+import { SaveFindingTool } from "./save_finding"
+import { ListFindingsTool } from "./list_findings"
+import { GetFindingTool } from "./get_finding"
+import { VerifyFindingTool } from "./verify_finding"
+import { GenerateReportTool } from "./generate_report"
+import { ScopeCheckTool } from "./scope_check"
+import { CollaboratorTool } from "./collaborator"
+import { AuthStatusTool } from "./auth_status"
 import { Glob } from "@opencode-ai/core/util/glob"
 import path from "path"
 import { pathToFileURL } from "url"
@@ -114,6 +122,14 @@ const layer = Layer.effect(
     const greptool = yield* GrepTool
     const patchtool = yield* ApplyPatchTool
     const skilltool = yield* SkillTool
+    const saveFinding = yield* SaveFindingTool
+    const listFindings = yield* ListFindingsTool
+    const getFinding = yield* GetFindingTool
+    const verifyFinding = yield* VerifyFindingTool
+    const generateReport = yield* GenerateReportTool
+    const scopeCheck = yield* ScopeCheckTool
+    const collaborator = yield* CollaboratorTool
+    const authStatus = yield* AuthStatusTool
     const agent = yield* Agent.Service
     const codeMode = flags.experimentalCodeMode ? yield* Effect.promise(() => import("./code-mode")) : undefined
     const codeModeTool = codeMode ? yield* codeMode.CodeModeTool : undefined
@@ -223,6 +239,14 @@ const layer = Layer.effect(
           question: Tool.init(question),
           lsp: Tool.init(lsptool),
           plan: Tool.init(plan),
+          saveFinding: Tool.init(saveFinding),
+          listFindings: Tool.init(listFindings),
+          getFinding: Tool.init(getFinding),
+          verifyFinding: Tool.init(verifyFinding),
+          generateReport: Tool.init(generateReport),
+          scopeCheck: Tool.init(scopeCheck),
+          collaborator: Tool.init(collaborator),
+          authStatus: Tool.init(authStatus),
           ...(codeModeTool ? { execute: Tool.init(codeModeTool) } : {}),
         })
 
@@ -243,6 +267,14 @@ const layer = Layer.effect(
             tool.search,
             tool.skill,
             tool.patch,
+            tool.saveFinding,
+            tool.listFindings,
+            tool.getFinding,
+            tool.verifyFinding,
+            tool.generateReport,
+            tool.scopeCheck,
+            tool.collaborator,
+            tool.authStatus,
             ...(tool.execute ? [tool.execute] : []),
             ...(flags.experimentalLspTool ? [tool.lsp] : []),
             ...(flags.experimentalPlanMode && flags.client === "cli" ? [tool.plan] : []),

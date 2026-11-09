@@ -10,6 +10,25 @@ Original Grepleaks additions are separately licensed under the root `LICENSE`;
 see `engine/GREPLEAKS_LICENSE.md`. This does not restrict the MIT rights in the
 inherited OpenCode material.
 
+## 0 security harness
+
+The evidence model (findings, triage guards, deterministic report structure,
+scope matching, HTTP verification oracles, and the out-of-band collaborator
+design) is adapted from the open-source `0` harness:
+
+- Source: https://github.com/0sec-labs/0
+- Copyright (c) 2026 0 Labs
+- Upstream license: MIT OR Apache-2.0, at your option.
+- Grepleaks uses the MIT terms. The full text is in `LICENSES/0-MIT.txt`.
+- Grepleaks implementation paths: `engine/packages/opencode/src/evidence/` and
+  the related tools under `engine/packages/opencode/src/tool/`.
+- Changes: this is a reimplementation with Grepleaks-specific storage, tools,
+  report layout, scope file format and runtime integration. It is not presented
+  as an official `0` release.
+
+The separate `0verse/` binary-analysis project in the upstream repository is
+Apache-2.0 and is not copied or bundled here.
+
 ## Fonts
 
 `engine/packages/ui/src/assets/fonts/Inter.ttf` and

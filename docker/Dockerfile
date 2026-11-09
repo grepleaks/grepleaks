@@ -58,6 +58,8 @@ RUN cd /opt/grepleaks/engine && bun install --frozen-lockfile \
 RUN printf '#!/bin/bash\ncd /opt/grepleaks/engine/packages/opencode\nexport PWD=/engagement\nexec bun src/index.ts "$@"\n' > /usr/local/bin/grepleaks \
     && chmod +x /usr/local/bin/grepleaks
 
+RUN mkdir -p /run/grepleaks && chmod 700 /run/grepleaks
+
 COPY host/bridge.py /opt/grepleaks/host_bridge.py
 COPY docker/config.py /opt/grepleaks/config.py
 COPY docker/entrypoint.sh /opt/grepleaks/entrypoint.sh
@@ -68,6 +70,7 @@ WORKDIR /engagement
 COPY engine/.opencode/skills/ /opt/grepleaks/skills/
 COPY engine/AGENTS.grepleaks.md /opt/grepleaks/AGENTS.md
 COPY LICENSE THIRD_PARTY_NOTICES.md /opt/grepleaks/
+COPY LICENSES/0-MIT.txt /opt/grepleaks/LICENSES/0-MIT.txt
 
 # Reported by `grepleaks --version`. The installer passes the release or ref.
 ARG OPENCODE_VERSION=local
