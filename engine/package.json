@@ -76,7 +76,7 @@
       "@playwright/test": "1.59.1",
       "semver": "7.7.4",
       "typescript": "5.8.2",
-      "@typescript/native-preview": "7.0.0-dev.20251207.1",
+      "@typescript/native-preview": "7.0.0-dev.20260707.2",
       "zod": "4.6.7",
       "remeda": "2.26.0",
       "sst": "4.13.1",
