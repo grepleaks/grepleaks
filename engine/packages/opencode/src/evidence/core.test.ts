@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from "bun:test"
 import { createServer, type Server } from "node:http"
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { openStore } from "./store"
@@ -90,6 +90,18 @@ describe("findings store", () => {
     })
     expect(store.list({ severity: "high" })).toHaveLength(1)
     expect(store.list({ target: "a.example.com" })[0]?.title).toBe("A")
+  })
+
+  it("writes summary.json atomically, without leftover temporary files", async () => {
+    const dir = workspace()
+    const store = await openStore(dir)
+    for (const title of ["A", "B", "C"])
+      store.save({ title, category: "xss", severity: "high", target: `https://${title}.example.com`, description: "x", impact: "y" })
+    const folder = path.join(dir, ".grepleaks")
+    const summary = JSON.parse(readFileSync(path.join(folder, "summary.json"), "utf8"))
+    expect(summary.total).toBe(3)
+    expect(summary.bySeverity.high).toBe(3)
+    expect(readdirSync(folder).filter((name) => name.endsWith(".tmp"))).toEqual([])
   })
 })
 
