@@ -125,7 +125,7 @@ def main():
             launcher = [str(args.launcher.resolve())] if args.launcher else [sys.executable, str(ROOT / "scripts/launch.py")]
             if args.launcher:
                 version = subprocess.run(launcher + ["--version"], cwd=directory, env=env, capture_output=True, text=True, check=True, timeout=60)
-                check(re.fullmatch(r"local|\d+\.\d+\.\d+(?:[-+].*)?", version.stdout.strip()), version.stdout)
+                check(re.fullmatch(r"local|v?\d+\.\d+\.\d+(?:[-+].*)?", version.stdout.strip()), version.stdout)
             bridge = [] if args.no_host_bridge else ["--host-bridge"]
             child = subprocess.Popen(launcher + bridge + ["--workspace", directory, "serve"], cwd=directory, env=env, stdin=subprocess.DEVNULL, stdout=log, stderr=log)
             try:
