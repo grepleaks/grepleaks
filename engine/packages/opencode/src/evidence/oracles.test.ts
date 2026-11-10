@@ -107,6 +107,20 @@ beforeAll(async () => {
       }
       return
     }
+    if (url.pathname === "/idor-vuln") {
+      // No access control: every identity receives the owner's record.
+      response.writeHead(200, { "content-type": "application/json" })
+      response.end(JSON.stringify({ account: "owner", email: "owner@example.com", secret: "x".repeat(200) }))
+      return
+    }
+    if (url.pathname === "/idor-own-data") {
+      // Access control works: each identity sees only its own record (2xx, different body).
+      const auth = request.headers.authorization ?? ""
+      const who = auth === "Bearer owner" ? "owner" : "other"
+      response.writeHead(200, { "content-type": "application/json" })
+      response.end(JSON.stringify({ account: who, email: `${who}@example.com`, notes: who.repeat(40) }))
+      return
+    }
     response.writeHead(404)
     response.end("not found")
   })
@@ -207,7 +221,36 @@ describe("verification oracles", () => {
     expect(result.oastConfirmed).toBe(true)
   })
 
-  it("reproduces cross-identity IDOR", async () => {
+  it("reproduces cross-identity IDOR when the non-owner receives the owner's resource", async () => {
+    const result = await verifyFinding(
+      finding({
+        title: "IDOR",
+        category: "idor",
+        target: `http://127.0.0.1:${port}/idor-vuln`,
+        endpoint: `http://127.0.0.1:${port}/idor-vuln`,
+        identities: ["owner", "other"],
+      }),
+      { workspace },
+    )
+    expect(result.status).toBe("reproduced")
+  })
+
+  it("reproduces cross-identity IDOR via an owner-specific marker", async () => {
+    const result = await verifyFinding(
+      finding({
+        title: "IDOR",
+        category: "idor",
+        target: `http://127.0.0.1:${port}/idor-vuln`,
+        endpoint: `http://127.0.0.1:${port}/idor-vuln`,
+        identities: ["owner", "other"],
+        evidence: { expect: { contains: "owner@example.com" } },
+      }),
+      { workspace },
+    )
+    expect(result.status).toBe("reproduced")
+  })
+
+  it("does not reproduce IDOR when the non-owner is denied", async () => {
     const result = await verifyFinding(
       finding({
         title: "IDOR",
@@ -218,7 +261,36 @@ describe("verification oracles", () => {
       }),
       { workspace },
     )
-    expect(result.status).toBe("reproduced")
+    expect(result.status).toBe("not_reproduced")
+  })
+
+  it("does not reproduce IDOR when the non-owner only sees its own data", async () => {
+    const result = await verifyFinding(
+      finding({
+        title: "IDOR",
+        category: "idor",
+        target: `http://127.0.0.1:${port}/idor-own-data`,
+        endpoint: `http://127.0.0.1:${port}/idor-own-data`,
+        identities: ["owner", "other"],
+      }),
+      { workspace },
+    )
+    expect(result.status).toBe("not_reproduced")
+  })
+
+  it("does not reproduce IDOR when the owner marker is absent from the non-owner response", async () => {
+    const result = await verifyFinding(
+      finding({
+        title: "IDOR",
+        category: "idor",
+        target: `http://127.0.0.1:${port}/idor-own-data`,
+        endpoint: `http://127.0.0.1:${port}/idor-own-data`,
+        identities: ["owner", "other"],
+        evidence: { expect: { contains: "owner@example.com" } },
+      }),
+      { workspace },
+    )
+    expect(result.status).toBe("not_reproduced")
   })
 
   it("refuses an out-of-scope target", async () => {
