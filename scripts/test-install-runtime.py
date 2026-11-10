@@ -109,6 +109,9 @@ class RuntimeTests(unittest.TestCase):
     def test_runtime_ships_license_notice(self):
         self.assertIn("LICENSES/0-MIT.txt", install.RUNTIME)
 
+    # install() edits the user's PATH in the Windows registry, and faking
+    # os.name breaks pathlib there: run this end-to-end case on POSIX only.
+    @unittest.skipIf(install.os.name == "nt", "install() writes the Windows registry")
     def test_install_prunes_old_runtimes_but_keeps_previous(self):
         import tempfile
         with tempfile.TemporaryDirectory() as tmp:
@@ -127,12 +130,24 @@ class RuntimeTests(unittest.TestCase):
             wrapper = home / ".local/bin/grepleaks"
             wrapper.parent.mkdir(parents=True)
             wrapper.write_text(f"#!/bin/sh\n{install.MARKER}\nexec python3 {base}/runtime-current/scripts/launch.py \"$@\"\n")
-            with patch.dict(install.os.environ, {"SHELL": "/bin/sh"}), patch.object(install.os, "name", "posix"):
+            with patch.dict(install.os.environ, {"SHELL": "/bin/sh"}):
                 install.install(source, home)
             remaining = sorted(p.name for p in base.glob("runtime-*"))
             new = install.RUNTIME_NAME.search(wrapper.read_text()).group(0)
             self.assertNotIn(new, ("runtime-old1", "runtime-old2", "runtime-current"))
             self.assertEqual(remaining, sorted(["runtime-current", "runtime-notes", new]))
+
+    def test_prune_runtimes_keeps_listed_and_foreign_directories(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            for name in ("runtime-old", "runtime-keep", "runtime-new"):
+                (base / name / "scripts").mkdir(parents=True)
+                (base / name / "scripts" / "launch.py").write_text("x")
+            (base / "runtime-foreign").mkdir()
+            removed = install.prune_runtimes(base, {base / "runtime-keep", base / "runtime-new", None})
+            self.assertEqual(removed, 1)
+            self.assertEqual(sorted(p.name for p in base.glob("runtime-*")), ["runtime-foreign", "runtime-keep", "runtime-new"])
 
     def test_detection_shape(self):
         status = install.detect_runtime()
