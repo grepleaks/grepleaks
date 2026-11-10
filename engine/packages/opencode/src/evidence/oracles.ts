@@ -107,6 +107,22 @@ function lengthDelta(a: string, b: string): number {
   return Math.abs(a.length - b.length)
 }
 
+/** True when two response bodies are essentially the same document. */
+function bodiesNearlyIdentical(a: string, b: string): boolean {
+  const left = a.replace(/\s+/g, " ").trim()
+  const right = b.replace(/\s+/g, " ").trim()
+  if (!left || !right) return false
+  if (left === right) return true
+  if (lengthDelta(left, right) > Math.max(10, left.length * 0.1)) return false
+  const tokens = (text: string) => new Set(text.split(/[^A-Za-z0-9@._-]+/).filter(Boolean))
+  const x = tokens(left)
+  const y = tokens(right)
+  if (x.size === 0 || y.size === 0) return false
+  let shared = 0
+  for (const item of x) if (y.has(item)) shared++
+  return shared / (x.size + y.size - shared) >= 0.9
+}
+
 const SQL_ERROR =
   /(sql syntax|mysql_fetch|mysqli?_|postgresql|pg_query|ora-\d{4,5}|sqlite|unclosed quotation|quoted string not properly terminated|warning.*mysql|syntax error at or near)/i
 
@@ -334,23 +350,42 @@ async function verifyIdor(finding: Finding, options: VerifyOptions): Promise<Ver
     result.evidence = evidenceOf(first.evidence, second.evidence)
     return result
   }
-  const ownerOk = (first.evidence.status ?? 0) >= 200 && (first.evidence.status ?? 0) < 300 && first.bodyText.length > 0
-  const otherDenied =
-    (second.evidence.status ?? 0) === 401 ||
-    (second.evidence.status ?? 0) === 403 ||
-    (second.evidence.status ?? 0) === 404
-  const significantlyDifferent = lengthDelta(first.bodyText, second.bodyText) > Math.max(40, first.bodyText.length * 0.3)
-  const reproduced = ownerOk && (otherDenied || significantlyDifferent)
+  const isSuccess = (status: number | undefined) => (status ?? 0) >= 200 && (status ?? 0) < 300
+  const ownerOk = isSuccess(first.evidence.status) && first.bodyText.trim().length > 0
+  const otherStatus = second.evidence.status ?? 0
+  const otherDenied = otherStatus === 401 || otherStatus === 403 || otherStatus === 404
+  const otherSuccess = isSuccess(otherStatus) && second.bodyText.trim().length > 0
+  // Optional owner-specific marker (e.g. an email or id that only the owner's
+  // resource contains). When present it is the strongest signal of a leak.
+  const marker = finding.evidence.expect?.contains
+  const markerLeaked =
+    marker !== undefined && marker.length > 0 && first.bodyText.includes(marker) && second.bodyText.includes(marker)
+  const similar = bodiesNearlyIdentical(first.bodyText, second.bodyText)
+  const otherGotOwnerData = otherSuccess && (marker ? markerLeaked : similar)
+  const reproduced = ownerOk && !otherDenied && otherGotOwnerData
   const result = baseVerification(
     "cross-identity-idor",
     reproduced ? "reproduced" : "not_reproduced",
     reproduced
-      ? `Owner (${owner}) received the resource and ${other} was denied or received a materially different response.`
-      : `Owner access=${ownerOk}, other denied=${otherDenied}, materially different=${significantlyDifferent}.`,
+      ? `Owner (${owner}) and non-owner (${other}) both received the owner's resource (${marker ? "owner marker leaked" : "near-identical body"}): access control is missing.`
+      : otherDenied
+        ? `Non-owner (${other}) was denied with HTTP ${otherStatus}: access control is enforced.`
+        : `Owner access=${ownerOk}, non-owner status=${otherStatus}, non-owner received owner data=${otherGotOwnerData}.`,
   )
   result.assertions = [
-    { kind: "owner_access", expected: "owner receives a 2xx response", actual: first.evidence.status, passed: ownerOk },
-    { kind: "non_owner_denied", expected: "second identity is denied or sees different data", actual: second.evidence.status, passed: otherDenied || significantlyDifferent },
+    { kind: "owner_access", expected: "owner receives a non-empty 2xx response", actual: first.evidence.status, passed: ownerOk },
+    {
+      kind: "non_owner_not_denied",
+      expected: "non-owner identity receives a 2xx (not 401/403/404)",
+      actual: second.evidence.status,
+      passed: otherSuccess && !otherDenied,
+    },
+    {
+      kind: marker ? "owner_marker_leaked" : "non_owner_body_matches",
+      expected: marker ? `non-owner response contains ${marker}` : "non-owner body is near-identical to the owner's",
+      actual: marker ? (markerLeaked ? "matched" : "not found") : similar ? "similar" : "different",
+      passed: otherGotOwnerData,
+    },
   ]
   result.evidence = evidenceOf(first.evidence, second.evidence)
   return result

@@ -17,32 +17,42 @@ function View(props: { api: TuiPluginApi; session_id: string }) {
   const cost = createMemo(() => session()?.cost ?? 0)
 
   // For the managed Grepleaks models, show the live credit balance from the
-  // gateway instead of "Limit unknown". Refetches whenever the conversation
-  // changes, so it drops as the session consumes credits.
+  // gateway instead of "Limit unknown". Refetched once per completed assistant
+  // message (not on every streamed update), so it drops as credits are used.
   const [balance, setBalance] = createSignal<number | null>(null)
+  // A string, not an object: memo equality then skips refetches while the
+  // provider settings are unchanged.
   const managed = createMemo(() => {
     const last = contextMessage(msg())
     if (!last || last.providerID !== "grepleaks") return undefined
     const provider = props.api.state.provider.find((item) => item.id === "grepleaks") as { key?: string } | undefined
     const baseURL = (props.api.state.config.provider?.["grepleaks"]?.options as { baseURL?: string } | undefined)?.baseURL
     if (!provider?.key || !baseURL) return undefined
-    return { key: provider.key, baseURL: String(baseURL).replace(/\/$/, "") }
+    return `${String(baseURL).replace(/\/$/, "")}\n${provider.key}`
   })
+  const completed = createMemo(
+    () => msg().filter((m) => m.role === "assistant" && (m.time as { completed?: number }).completed).length,
+  )
   createEffect(() => {
     const m = managed()
+    completed()
     if (!m) {
       setBalance(null)
       return
     }
-    let cancelled = false
-    fetch(`${m.baseURL}/credits`, { headers: { Authorization: `Bearer ${m.key}` } })
+    const [baseURL, key] = m.split("\n")
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 10_000)
+    fetch(`${baseURL}/credits`, { headers: { Authorization: `Bearer ${key}` }, signal: controller.signal })
       .then((res) => (res.ok ? res.json() : undefined))
       .then((body) => {
-        if (!cancelled && body && typeof body.balance_cents === "number") setBalance(body.balance_cents)
+        if (body && typeof body.balance_cents === "number") setBalance(body.balance_cents)
       })
       .catch(() => {})
+      .finally(() => clearTimeout(timeout))
     onCleanup(() => {
-      cancelled = true
+      clearTimeout(timeout)
+      controller.abort()
     })
   })
 

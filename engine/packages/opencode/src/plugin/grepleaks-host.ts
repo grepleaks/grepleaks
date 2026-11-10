@@ -18,7 +18,8 @@ export const GrepleaksHost: Plugin = async () => {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),
-      signal: AbortSignal.any([abort, AbortSignal.timeout(130_000)]),
+      // Command time limit + the host-side confirmation window.
+      signal: AbortSignal.any([abort, AbortSignal.timeout(280_000)]),
       redirect: "error",
     })
     if (!response.ok)

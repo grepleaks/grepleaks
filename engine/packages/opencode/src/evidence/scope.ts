@@ -3,6 +3,8 @@
  */
 
 import { readFileSync } from "node:fs"
+import { lookup } from "node:dns/promises"
+import { isIP } from "node:net"
 import path from "node:path"
 import type { ScopeConfig, ScopeDecision } from "./types"
 
@@ -61,37 +63,135 @@ export function parseScope(value: unknown): ScopeConfig {
   }
 }
 
+export class ScopeError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = "ScopeError"
+  }
+}
+
+/**
+ * Loads the first scope file that exists. A file that exists but cannot be read
+ * or parsed throws a ScopeError instead of silently falling back to "no scope"
+ * (which would allow every target). An explicit GREPLEAKS_SCOPE path that does
+ * not exist is also an error rather than a silent fallback.
+ */
 export function loadScope(workspace: string): LoadedScope | undefined {
+  const explicit = process.env.GREPLEAKS_SCOPE
   const candidates = [
-    process.env.GREPLEAKS_SCOPE,
+    explicit,
     path.join(workspace, ".grepleaks", "scope.json"),
     path.join(workspace, "scope.json"),
   ].filter((item): item is string => Boolean(item))
   for (const candidate of candidates) {
+    let raw: string
     try {
-      const raw = readFileSync(candidate, "utf8")
-      return { config: parseScope(JSON.parse(raw)), path: candidate }
-    } catch {
-      // Try the next location.
+      raw = readFileSync(candidate, "utf8")
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException)?.code === "ENOENT") {
+        if (explicit && candidate === explicit) throw new ScopeError(`Scope file ${candidate} (GREPLEAKS_SCOPE) does not exist`)
+        continue
+      }
+      throw new ScopeError(`Scope file ${candidate} could not be read: ${error instanceof Error ? error.message : String(error)}`)
     }
+    let parsed: unknown
+    try {
+      parsed = JSON.parse(raw)
+    } catch (error) {
+      throw new ScopeError(`Scope file ${candidate} is not valid JSON: ${error instanceof Error ? error.message : String(error)}`)
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      throw new ScopeError(`Scope file ${candidate} must contain a JSON object`)
+    }
+    return { config: parseScope(parsed), path: candidate }
   }
   return undefined
 }
 
-function hostOf(target: string): string {
+/** loadScope variant that reports a broken scope file instead of throwing. */
+export function tryLoadScope(workspace: string): { loaded?: LoadedScope; error?: string } {
   try {
-    return new URL(target.includes("://") ? target : `http://${target}`).hostname.toLowerCase()
-  } catch {
-    return target.toLowerCase().split(/[/?#]/)[0] ?? target.toLowerCase()
+    return { loaded: loadScope(workspace) }
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : String(error) }
   }
 }
 
-function portOf(target: string): string | undefined {
+const DEFAULT_PORTS: Record<string, string> = { "http:": "80", "https:": "443", "ws:": "80", "wss:": "443" }
+
+function parseTarget(target: string): URL | undefined {
   try {
-    return new URL(target.includes("://") ? target : `http://${target}`).port || undefined
+    return new URL(target.includes("://") ? target : `http://${target}`)
   } catch {
     return undefined
   }
+}
+
+function normalizeHost(host: string): string {
+  return host.toLowerCase().replace(/\.+$/, "")
+}
+
+function hostOf(target: string): string {
+  const parsed = parseTarget(target)
+  if (parsed) return normalizeHost(parsed.hostname)
+  return normalizeHost(target.split(/[/?#]/)[0] ?? target)
+}
+
+/** Effective port: explicit port, or the scheme's default port. */
+function effectivePort(url: URL): string {
+  return url.port || DEFAULT_PORTS[url.protocol] || ""
+}
+
+function portOf(target: string): string | undefined {
+  const parsed = parseTarget(target)
+  return parsed ? effectivePort(parsed) || undefined : undefined
+}
+
+/**
+ * Path segments after percent-decoding, collapsing duplicate slashes and
+ * resolving dot segments. Query and fragment are ignored.
+ */
+function pathSegments(url: URL, lowercase: boolean): string[] {
+  const segments: string[] = []
+  for (const rawSegment of url.pathname.split("/")) {
+    let decoded = rawSegment
+    try {
+      decoded = decodeURIComponent(rawSegment)
+    } catch {
+      // Malformed escapes are compared verbatim.
+    }
+    // A decoded "%2F" or "\" acts as a separator.
+    for (const part of decoded.split(/[/\\]/)) {
+      if (!part || part === ".") continue
+      if (part === "..") {
+        segments.pop()
+        continue
+      }
+      segments.push(lowercase ? part.toLowerCase() : part)
+    }
+  }
+  return segments
+}
+
+/**
+ * URL entries match on origin (protocol, host, effective port) and then on path
+ * segment boundaries. For out-of-scope entries (lenient = true) protocol and
+ * port are ignored and the path is compared case-insensitively, so cosmetic
+ * variants of an excluded URL cannot slip through.
+ */
+function matchUrlEntry(target: string, entry: string, lenient: boolean): boolean {
+  const entryUrl = parseTarget(entry)
+  const targetUrl = parseTarget(target)
+  if (!entryUrl || !targetUrl) return false
+  if (normalizeHost(entryUrl.hostname) !== normalizeHost(targetUrl.hostname)) return false
+  if (!lenient) {
+    if (entryUrl.protocol !== targetUrl.protocol) return false
+    if (effectivePort(entryUrl) !== effectivePort(targetUrl)) return false
+  }
+  const entrySegments = pathSegments(entryUrl, lenient)
+  const targetSegments = pathSegments(targetUrl, lenient)
+  if (entrySegments.length > targetSegments.length) return false
+  return entrySegments.every((segment, index) => targetSegments[index] === segment)
 }
 
 function ipv4ToInt(address: string): number | undefined {
@@ -107,7 +207,7 @@ function matchCidr(host: string, entry: string): boolean {
   if (!network || !bitsRaw) return false
   const bits = Number(bitsRaw)
   if (!Number.isInteger(bits) || bits < 0 || bits > 32) return false
-  const hostInt = ipv4ToInt(host)
+  const hostInt = ipv4ToInt(host.replace(/^::ffff:/i, ""))
   const netInt = ipv4ToInt(network)
   if (hostInt === undefined || netInt === undefined) return false
   if (bits === 0) return true
@@ -115,25 +215,27 @@ function matchCidr(host: string, entry: string): boolean {
   return (hostInt & mask) === (netInt & mask)
 }
 
-function matchEntry(target: string, host: string, entry: string): boolean {
+const CIDR_ENTRY = /^\d+\.\d+\.\d+\.\d+\/\d+$/
+
+function isCidrEntry(entry: string): boolean {
+  return CIDR_ENTRY.test(entry.trim())
+}
+
+function matchEntry(target: string, host: string, entry: string, lenient: boolean): boolean {
   const value = entry.trim()
   if (!value) return false
-  if (value.startsWith("http://") || value.startsWith("https://")) {
-    const normalized = value.replace(/\/+$/, "")
-    const normalizedTarget = target.replace(/\/+$/, "")
-    return normalizedTarget === normalized || normalizedTarget.startsWith(`${normalized}/`)
-  }
-  if (/^\d+\.\d+\.\d+\.\d+\/\d+$/.test(value)) return matchCidr(host, value)
+  if (/^https?:\/\//i.test(value)) return matchUrlEntry(target, value, lenient)
+  if (CIDR_ENTRY.test(value)) return matchCidr(host, value)
   if (value.startsWith("*.")) {
-    const suffix = value.slice(1).toLowerCase()
+    const suffix = normalizeHost(value.slice(1))
     return host === suffix.slice(1) || host.endsWith(suffix)
   }
   if (value.includes(":")) {
     const [entryHost, entryPort] = value.split(":")
     const port = portOf(target)
-    return host === entryHost?.toLowerCase() && (!entryPort || port === entryPort)
+    return host === normalizeHost(entryHost ?? "") && (!entryPort || port === entryPort)
   }
-  return host === value.toLowerCase()
+  return host === normalizeHost(value)
 }
 
 export function matchScope(config: ScopeConfig | undefined, target: string): ScopeDecision {
@@ -142,19 +244,88 @@ export function matchScope(config: ScopeConfig | undefined, target: string): Sco
   }
   const host = hostOf(target)
   for (const entry of config.outOfScope ?? []) {
-    if (matchEntry(target, host, entry)) {
+    if (matchEntry(target, host, entry, true)) {
       return { configured: true, allowed: false, reason: `out of scope: ${entry}`, matched: entry, host }
     }
   }
   if (!config.inScope || config.inScope.length === 0) {
-    return { configured: true, allowed: true, reason: "scope has no in_scope entries", host }
+    return { configured: true, allowed: false, reason: "scope file has no in_scope entries; refusing all targets", host }
   }
   for (const entry of config.inScope) {
-    if (matchEntry(target, host, entry)) {
+    if (matchEntry(target, host, entry, false)) {
       return { configured: true, allowed: true, reason: `in scope: ${entry}`, matched: entry, host }
     }
   }
   return { configured: true, allowed: false, reason: "target does not match any in_scope entry", host }
+}
+
+export type Resolver = (host: string) => Promise<string[]>
+
+const defaultResolver: Resolver = async (host) => {
+  const addresses = await lookup(host, { all: true, verbatim: true })
+  return addresses.map((item) => item.address)
+}
+
+/**
+ * matchScope plus DNS: when the scope contains CIDR entries, the target
+ * hostname is resolved and every resolved address is checked against them.
+ * Any address in an out-of-scope CIDR denies; a hostname that matched no
+ * in-scope entry is allowed only if every address falls in an in-scope CIDR.
+ *
+ * Residual risk: the HTTP client resolves the name again when it connects, so
+ * a DNS-rebinding target could answer differently between this check and the
+ * connection. Full protection would require pinning the checked IP.
+ */
+export async function matchScopeResolved(
+  config: ScopeConfig | undefined,
+  target: string,
+  resolve: Resolver = defaultResolver,
+): Promise<ScopeDecision> {
+  const decision = matchScope(config, target)
+  if (!config || (!decision.allowed && decision.matched)) return decision
+  if (!config.inScope?.length) return decision
+  const outCidrs = (config.outOfScope ?? []).filter(isCidrEntry)
+  const inCidrs = config.inScope.filter(isCidrEntry)
+  if (!outCidrs.length && !inCidrs.length) return decision
+  const host = decision.host ?? hostOf(target)
+  if (isIP(host.replace(/^\[|\]$/g, ""))) return decision
+  if (decision.allowed && !outCidrs.length) return decision
+  if (!decision.allowed && !inCidrs.length) return decision
+
+  let addresses: string[]
+  try {
+    addresses = await resolve(host)
+  } catch (error) {
+    return {
+      configured: true,
+      allowed: false,
+      reason: `could not resolve ${host} to check CIDR scope: ${error instanceof Error ? error.message : String(error)}`,
+      host,
+    }
+  }
+  if (!addresses.length) {
+    return { configured: true, allowed: false, reason: `could not resolve ${host} to check CIDR scope`, host }
+  }
+  for (const address of addresses) {
+    const hit = outCidrs.find((entry) => matchCidr(address, entry))
+    if (hit) {
+      return { configured: true, allowed: false, reason: `out of scope: ${hit} (${host} resolves to ${address})`, matched: hit, host }
+    }
+  }
+  if (decision.allowed) return decision
+  const matched: string[] = []
+  for (const address of addresses) {
+    const hit = inCidrs.find((entry) => matchCidr(address, entry))
+    if (!hit) return decision
+    matched.push(hit)
+  }
+  return {
+    configured: true,
+    allowed: true,
+    reason: `in scope: ${matched[0]} (${host} resolves to ${addresses.join(", ")})`,
+    matched: matched[0],
+    host,
+  }
 }
 
 export function requireScope(): boolean {

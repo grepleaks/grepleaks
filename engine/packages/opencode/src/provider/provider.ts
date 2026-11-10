@@ -1552,9 +1552,12 @@ const layer = Layer.effect(
               },
               options: mergeDeep(existingModel?.options ?? {}, model.options ?? {}),
               limit: {
-                context: model.limit?.context ?? existingModel?.limit?.context ?? 0,
+                // Grepleaks managed models saved before limits were restored
+                // have none; 0 would disable auto-compaction for them.
+                context:
+                  model.limit?.context ?? existingModel?.limit?.context ?? (providerID === "grepleaks" ? 1_000_000 : 0),
                 input: model.limit?.input ?? existingModel?.limit?.input,
-                output: model.limit?.output ?? existingModel?.limit?.output ?? 0,
+                output: model.limit?.output ?? existingModel?.limit?.output ?? (providerID === "grepleaks" ? 32_000 : 0),
               },
               headers: mergeDeep(existingModel?.headers ?? {}, model.headers ?? {}),
               family: model.family ?? existingModel?.family ?? "",

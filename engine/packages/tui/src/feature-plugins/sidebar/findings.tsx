@@ -1,7 +1,7 @@
 import type { TuiPlugin, TuiPluginApi } from "@opencode-ai/plugin/tui"
 import type { BuiltinTuiPlugin } from "../builtins"
 import { createSignal, For, Show, onCleanup } from "solid-js"
-import { readFileSync } from "node:fs"
+import { readFileSync, statSync } from "node:fs"
 import path from "node:path"
 
 const id = "internal:sidebar-findings"
@@ -27,11 +27,24 @@ function summaryPath(): string {
   return path.join(workspace, ".grepleaks", "summary.json")
 }
 
+let lastKey = ""
+let lastSummary: Summary | undefined
+
+// Re-parse only when the file changed: the panel polls every 2 s and a fresh
+// object on every poll re-rendered the whole list.
 function readSummary(): Summary | undefined {
   try {
-    return JSON.parse(readFileSync(summaryPath(), "utf8")) as Summary
+    const path = summaryPath()
+    const stat = statSync(path)
+    const key = `${path}:${stat.mtimeMs}:${stat.size}`
+    if (key === lastKey) return lastSummary
+    const parsed = JSON.parse(readFileSync(path, "utf8")) as Summary
+    lastKey = key
+    lastSummary = parsed
+    return parsed
   } catch {
-    return undefined
+    // Missing, or caught mid-write: keep the last good value.
+    return lastSummary
   }
 }
 
@@ -52,7 +65,10 @@ function View(props: { api: TuiPluginApi }) {
   const [open, setOpen] = createSignal(true)
   const [summary, setSummary] = createSignal<Summary | undefined>(readSummary())
   const theme = () => props.api.theme.current
-  const timer = setInterval(() => setSummary(readSummary()), 2000)
+  const timer = setInterval(() => {
+    const next = readSummary()
+    if (next !== summary()) setSummary(next)
+  }, 2000)
   onCleanup(() => clearInterval(timer))
 
   return (

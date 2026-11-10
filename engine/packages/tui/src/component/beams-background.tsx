@@ -5,11 +5,12 @@ import {
   type RenderContext,
   type RenderableOptions,
 } from "@opentui/core";
-import { extend, useTerminalDimensions } from "@opentui/solid";
+import { extend, useRenderer, useTerminalDimensions } from "@opentui/solid";
 import {
   createEffect,
   createMemo,
   createSignal,
+  untrack,
   onCleanup,
   Show,
 } from "solid-js";
@@ -132,7 +133,19 @@ export function BeamsBackground() {
   const { theme } = useTheme();
   const kv = useKV();
   const dimensions = useTerminalDimensions();
+  const renderer = useRenderer();
   const [seconds, setSeconds] = createSignal(0);
+  // Pause while the terminal is unfocused: the animation is decoration and
+  // each tick repaints the whole screen.
+  const [focused, setFocused] = createSignal(true);
+  const onFocus = () => setFocused(true);
+  const onBlur = () => setFocused(false);
+  renderer.on("focus", onFocus);
+  renderer.on("blur", onBlur);
+  onCleanup(() => {
+    renderer.off("focus", onFocus);
+    renderer.off("blur", onBlur);
+  });
   const colors = createMemo(() => ({
     background: theme.background,
     palette: Array.from({ length: 16 }, (_, index) =>
@@ -140,11 +153,13 @@ export function BeamsBackground() {
     ),
   }));
   createEffect(() => {
-    if (!kv.get("animations_enabled", true)) return;
-    const start = performance.now();
+    if (!kv.get("animations_enabled", true) || !focused()) return;
+    // Resume from the current frame instead of jumping after a pause.
+    const start = performance.now() - untrack(seconds) * 1000;
+    // 12 fps is smooth enough for slow drifting beams and halves the CPU of 20 fps.
     const timer = setInterval(
       () => setSeconds((performance.now() - start) / 1000),
-      50,
+      83,
     );
     onCleanup(() => clearInterval(timer));
   });

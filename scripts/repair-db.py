@@ -6,6 +6,7 @@ writing can leave it malformed. Engagement files live outside the database and
 are never touched by this script.
 """
 import argparse
+from contextlib import closing
 import os
 from pathlib import Path
 import shutil
@@ -18,7 +19,7 @@ import time
 
 def counts(database):
     try:
-        with sqlite3.connect(database) as connection:
+        with closing(sqlite3.connect(database)) as connection, connection:
             return {
                 "sessions": connection.execute("select count(*) from session").fetchone()[0],
                 "messages": connection.execute("select count(*) from message").fetchone()[0],
@@ -29,7 +30,7 @@ def counts(database):
 
 def verify(database):
     try:
-        with sqlite3.connect(database) as connection:
+        with closing(sqlite3.connect(database)) as connection, connection:
             return connection.execute("pragma integrity_check").fetchone()[0] == "ok"
     except sqlite3.DatabaseError:
         return False
@@ -41,6 +42,12 @@ def main():
     args = parser.parse_args()
 
     database = args.state.expanduser().resolve() / "data" / "opencode" / "opencode-local.db"
+    # The state directory is writable from the container: never follow a
+    # planted symlink (it would copy an arbitrary host file into the backup).
+    for path in (database.parent.parent, database.parent, *(Path(str(database) + s) for s in ("", "-wal", "-shm"))):
+        if path.is_symlink():
+            print(f"Refusing to repair: {path} is a symbolic link. Remove it and retry.", file=sys.stderr)
+            return 1
     if not database.is_file():
         print(f"No session database at {database}")
         return 0
@@ -53,7 +60,9 @@ def main():
             shutil.copy2(source, backup / source.name)
     print(f"Backup: {backup}")
 
-    recovered = Path(tempfile.mkstemp(prefix="grepleaks-recovered-", suffix=".db")[1])
+    descriptor, name = tempfile.mkstemp(prefix="grepleaks-recovered-", suffix=".db")
+    os.close(descriptor)  # an open handle blocks the later replace on Windows
+    recovered = Path(name)
 
     def install(candidate):
         if not verify(candidate):
@@ -81,7 +90,7 @@ def main():
             )
             if result.returncode == 0 and result.stdout.strip():
                 try:
-                    with sqlite3.connect(recovered) as connection:
+                    with closing(sqlite3.connect(recovered)) as connection, connection:
                         connection.executescript(result.stdout)
                     if install(recovered):
                         return 0
@@ -95,7 +104,7 @@ def main():
             source = sqlite3.connect(database)
             script = "\n".join(source.iterdump())
             source.close()
-            with sqlite3.connect(recovered) as target:
+            with closing(sqlite3.connect(recovered)) as target, target:
                 target.executescript(script)
             if install(recovered):
                 return 0

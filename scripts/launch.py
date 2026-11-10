@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Cross-platform launcher. The host companion is opt-in via --host-bridge."""
 import argparse
+from contextlib import closing
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -28,6 +29,31 @@ from config import configuration
 _state_lock = None
 
 
+def no_symlink(path):
+    """The state directory is mounted read-write in the container, so anything
+    there may have been replaced by a symlink pointing elsewhere on the host.
+    The launcher never follows one."""
+    if Path(path).is_symlink():
+        raise ValueError(f"Refusing to use {path}: it is a symbolic link (it may have been created from inside the container). Remove it and retry.")
+    return Path(path)
+
+
+def open_state_file(path, mode="w"):
+    """Open a launcher file in the state directory without following symlinks."""
+    no_symlink(path)
+    flags = os.O_WRONLY | os.O_CREAT | (os.O_APPEND if "a" in mode else os.O_TRUNC)
+    flags |= getattr(os, "O_NOFOLLOW", 0)
+    return os.fdopen(os.open(path, flags, 0o600), mode)
+
+
+def write_state_file(path, text):
+    try:
+        with open_state_file(path) as handle:
+            handle.write(text)
+    except (OSError, ValueError):
+        pass
+
+
 def state_directory(env):
     return Path(env.get("GREPLEAKS_STATE_DIR") or Path.home() / ".grepleaks" / "state").expanduser().resolve()
 
@@ -41,7 +67,7 @@ def acquire_state_lock(state):
     global _state_lock
     if _state_lock is not None:
         return _state_lock
-    handle = (state / ".launcher.lock").open("a+")
+    handle = open_state_file(state / ".launcher.lock", "a")
     try:
         if os.name == "nt":
             import msvcrt
@@ -118,10 +144,7 @@ def maybe_open_console(state, env):
         return
     if not open_in_browser(CONSOLE_URL):
         return
-    try:
-        marker.touch()
-    except OSError:
-        pass
+    write_state_file(marker, "")
     print(f"Grepleaks: opened {CONSOLE_URL} in your browser to create a key.", file=sys.stderr, flush=True)
 
 
@@ -236,7 +259,8 @@ def update_command(ref=None):
             try:
                 ref = latest_release(repository)
             except Exception:
-                ref = "main"
+                # Never fall back to the moving main branch: retry later.
+                raise ValueError("Could not look up the latest release (offline or GitHub rate limit); retry later") from None
     return [sys.executable, str(installer), "--repository", repository, "--ref", ref]
 
 
@@ -247,6 +271,11 @@ def run_update(ref=None):
         print(f"Grepleaks: {error}", file=sys.stderr)
         return 1
     ref = command_line[command_line.index("--ref") + 1]
+    current = parse_version(image_label(image_name(dict(os.environ)), "org.grepleaks.ref") or "")
+    target = parse_version(ref)
+    if current and target and target < current and os.environ.get("GREPLEAKS_ALLOW_DOWNGRADE") != "1":
+        print(f"Grepleaks: {ref} is older than the installed version; set GREPLEAKS_ALLOW_DOWNGRADE=1 to install it anyway.", file=sys.stderr)
+        return 1
     print(f"Grepleaks: updating to {ref} and rebuilding the tool image…", file=sys.stderr, flush=True)
     return subprocess.call(command_line, cwd=str(ROOT), env=dict(os.environ))
 
@@ -260,7 +289,11 @@ def parse_version(tag):
 
 
 def cached_latest_release(state, repository):
-    """One GitHub call a day at most: startup must not wait on the network."""
+    """One GitHub call a day at most: startup must not wait on the network.
+
+    A failed lookup is cached too (tag null), so an offline machine does not
+    wait on every launch.
+    """
     cache = state / "update-check.json"
     try:
         saved = json.loads(cache.read_text())
@@ -268,13 +301,16 @@ def cached_latest_release(state, repository):
             tag = saved.get("tag")
             if isinstance(tag, str):
                 return tag
-    except (OSError, ValueError, KeyError, TypeError):
+            raise LookupError("offline at the last check")
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
         pass
-    tag = latest_release(repository)
     try:
-        cache.write_text(json.dumps({"checked_at": time.time(), "tag": tag}))
-    except OSError:
-        pass
+        tag = latest_release(repository, timeout=3)
+    except Exception:
+        tag = None
+    write_state_file(cache, json.dumps({"checked_at": time.time(), "tag": tag}))
+    if tag is None:
+        raise LookupError("release lookup failed")
     return tag
 
 
@@ -329,10 +365,7 @@ def notify_update(state, env):
             return
         print("Grepleaks: updated. Starting the new version.", file=sys.stderr, flush=True)
         return
-    try:
-        declined.write_text(tag)
-    except OSError:
-        pass
+    write_state_file(declined, tag)
 
 
 def refresh_in_background(state, env):
@@ -354,7 +387,7 @@ def refresh_in_background(state, env):
     try:
         if marker.exists() and time.time() - marker.stat().st_mtime < UPDATE_RETRY_SECONDS:
             return
-        marker.touch()
+        write_state_file(marker, "")
     except OSError:
         return
     ref = image_label(image_name(env), "org.grepleaks.ref")
@@ -367,7 +400,7 @@ def refresh_in_background(state, env):
     log = state / "update.log"
     stamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     try:
-        with log.open("a") as handle:
+        with open_state_file(log, "a") as handle:
             handle.write(f"\n=== update started {stamp} ===\n")
             handle.flush()
             options = {"stdout": handle, "stderr": subprocess.STDOUT, "cwd": str(ROOT), "env": dict(env)}
@@ -376,7 +409,7 @@ def refresh_in_background(state, env):
             else:
                 options["start_new_session"] = True
             subprocess.Popen(command_line, **options)
-    except OSError:
+    except (OSError, ValueError):
         return
     print(
         f"Grepleaks: the tool image is {age:.0f} days old. Updating it in the background; "
@@ -401,10 +434,7 @@ def read_sessions(state):
 
 
 def write_sessions(state, sessions):
-    try:
-        sessions_file(state).write_text(json.dumps(sessions))
-    except OSError:
-        pass
+    write_state_file(sessions_file(state), json.dumps(sessions))
 
 
 def process_running(pid):
@@ -468,10 +498,14 @@ def reap_sessions(state):
 
 def check_database(state):
     database = state / "data" / "opencode" / "opencode-local.db"
-    if not database.is_file():
-        return
+    no_symlink(database)
     try:
-        with sqlite3.connect(database) as connection:
+        if not database.is_file():
+            return
+    except PermissionError:
+        return  # root-owned from an older Linux session; the entrypoint fixes ownership
+    try:
+        with closing(sqlite3.connect(database)) as connection:
             result = connection.execute("pragma quick_check").fetchone()
     except sqlite3.OperationalError as error:
         if "locked" in str(error).lower():
@@ -524,10 +558,10 @@ def command(args, env, terminal, state):
         path = Path(source).expanduser().resolve()
         if not path.is_file() or "," in str(path): raise ValueError(f"File mount source must be an existing file without commas: {source}")
         result.extend(["--mount", f"type=bind,src={path},dst={destination},readonly"])
-    args.exchange = state / "exchange"
+    args.exchange = no_symlink(state / "exchange")
     args.exchange.mkdir(mode=0o700, exist_ok=True)
     mount(state, "/var/lib/grepleaks")
-    workspace = args.workspace or state / "workspace"
+    workspace = args.workspace or no_symlink(state / "workspace")
     if not args.workspace:
         workspace.mkdir(mode=0o700, exist_ok=True)
     mount(workspace, "/engagement")
@@ -550,6 +584,11 @@ def command(args, env, terminal, state):
         port = int(env.get("GREPLEAKS_PORT", "4096"))
         if not 1 <= port <= 65535: raise ValueError("Invalid port")
         result += ["-p", f"127.0.0.1:{port}:4096"]
+    # Native Linux Docker writes as root into the bind mounts: tell the
+    # entrypoint whom to hand the files back to (Docker Desktop maps owners).
+    if sys.platform.startswith("linux") and hasattr(os, "getuid") and os.getuid() != 0:
+        env["GREPLEAKS_HOST_UID"], env["GREPLEAKS_HOST_GID"] = str(os.getuid()), str(os.getgid())
+        result += ["-e", "GREPLEAKS_HOST_UID", "-e", "GREPLEAKS_HOST_GID"]
     result += ["--name", args.container_name, "--label", f"com.grepleaks.state={state_id(state)}"]
     if args.host_bridge:
         result += ["-p", "127.0.0.1::8788"]
@@ -611,6 +650,9 @@ def main():
         print(f"Grepleaks: {error}", file=sys.stderr)
         return 1
     if args.repair_db:
+        # A leftover container may still be writing the database: stop it first.
+        if not docker_problem():
+            reap_sessions(state)
         return repair_database(state)
     if args.host_bridge:
         env["GREPLEAKS_HOST_TOKEN"] = secrets.token_urlsafe(48)

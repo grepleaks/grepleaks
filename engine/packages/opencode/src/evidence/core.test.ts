@@ -1,9 +1,11 @@
-import { describe, expect, it } from "bun:test"
-import { mkdtempSync } from "node:fs"
+import { afterAll, beforeAll, describe, expect, it } from "bun:test"
+import { createServer, type Server } from "node:http"
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import path from "node:path"
 import { openStore } from "./store"
-import { parseScope, matchScope } from "./scope"
+import { parseScope, matchScope, matchScopeResolved, loadScope, tryLoadScope, ScopeError } from "./scope"
+import { contextFor, httpRequest } from "./http"
 import { evidenceCompleteness, holdingItWrong, isDisclosureWorthy, triage } from "./triage"
 
 function workspace(): string {
@@ -126,6 +128,160 @@ describe("scope", () => {
     expect(matchScope(undefined, "https://anywhere.example").allowed).toBe(true)
     expect(matchScope(undefined, "https://anywhere.example").configured).toBe(false)
   })
+
+  it("denies everything when the scope has no in_scope entries", () => {
+    const typo = parseScope({ in_scop: ["example.com"] })
+    expect(matchScope(typo, "https://example.com").allowed).toBe(false)
+    expect(matchScope(typo, "https://example.com").configured).toBe(true)
+  })
+
+  it("matches host:port entries against default ports", () => {
+    const ports = parseScope({ in_scope: ["example.com:443"], out_of_scope: ["blocked.test:80"] })
+    expect(matchScope(ports, "https://example.com/x").allowed).toBe(true)
+    expect(matchScope(ports, "http://example.com/x").allowed).toBe(false)
+    expect(matchScope(ports, "http://blocked.test/").reason).toContain("out of scope")
+  })
+
+  it("cannot be bypassed around an out-of-scope URL", () => {
+    const urls = parseScope({
+      in_scope: ["*.example.com", "https://app.example.com/api"],
+      out_of_scope: ["https://www.example.com/admin", "admin.example.com"],
+    })
+    for (const target of [
+      "https://www.example.com/admin",
+      "https://www.example.com/admin?x=1",
+      "https://www.example.com/admin#frag",
+      "https://www.example.com/Admin",
+      "https://WWW.Example.com/admin/",
+      "https://www.example.com//admin",
+      "https://www.example.com:443/admin",
+      "http://www.example.com/admin",
+      "https://www.example.com/./admin",
+      "https://www.example.com/x/../admin",
+      "https://www.example.com/%61dmin",
+      "https://www.example.com/x/..%2fadmin",
+      "https://www.example.com./admin",
+      "https://admin.example.com./",
+    ]) {
+      expect(matchScope(urls, target).allowed).toBe(false)
+    }
+    expect(matchScope(urls, "https://www.example.com/administrator").allowed).toBe(true)
+    expect(matchScope(urls, "https://www.example.com/public").allowed).toBe(true)
+  })
+
+  it("keeps in-scope URL prefixes on segment boundaries", () => {
+    const urls = parseScope({ in_scope: ["https://app.example.com/api"] })
+    expect(matchScope(urls, "https://app.example.com/api").allowed).toBe(true)
+    expect(matchScope(urls, "https://app.example.com/api/v1?x=1").allowed).toBe(true)
+    expect(matchScope(urls, "https://app.example.com:443/api/v1").allowed).toBe(true)
+    expect(matchScope(urls, "https://app.example.com/api/../admin").allowed).toBe(false)
+    expect(matchScope(urls, "https://app.example.com/api/%2e%2e/admin").allowed).toBe(false)
+    expect(matchScope(urls, "https://app.example.com/apix").allowed).toBe(false)
+    expect(matchScope(urls, "http://app.example.com/api").allowed).toBe(false)
+    expect(matchScope(urls, "https://app.example.com:8443/api").allowed).toBe(false)
+  })
+
+  it("checks resolved addresses against CIDR entries", async () => {
+    const cidr = parseScope({ in_scope: ["*.example.com", "10.0.0.0/8"], out_of_scope: ["10.9.0.0/16", "127.0.0.0/8"] })
+    const resolver = (map: Record<string, string[]>) => async (host: string) => map[host] ?? []
+    const dns = resolver({
+      "app.example.com": ["10.1.2.3"],
+      "sneaky.example.com": ["10.9.1.1"],
+      "loop.example.com": ["93.184.216.34", "127.0.0.1"],
+      "internal.corp": ["10.4.4.4"],
+      "mixed.corp": ["10.4.4.4", "8.8.8.8"],
+    })
+    expect((await matchScopeResolved(cidr, "https://app.example.com", dns)).allowed).toBe(true)
+    expect((await matchScopeResolved(cidr, "https://sneaky.example.com", dns)).allowed).toBe(false)
+    expect((await matchScopeResolved(cidr, "https://loop.example.com", dns)).allowed).toBe(false)
+    expect((await matchScopeResolved(cidr, "https://internal.corp", dns)).allowed).toBe(true)
+    expect((await matchScopeResolved(cidr, "https://mixed.corp", dns)).allowed).toBe(false)
+    expect((await matchScopeResolved(cidr, "https://unresolvable.example.com", dns)).allowed).toBe(false)
+    expect((await matchScopeResolved(cidr, "http://10.9.0.1", dns)).allowed).toBe(false)
+  })
+})
+
+describe("scoped http client", () => {
+  let server: Server
+  let base = ""
+  const seen: Array<{ path: string; authorization?: string }> = []
+
+  beforeAll(async () => {
+    server = createServer((request, response) => {
+      const url = new URL(request.url ?? "/", base)
+      seen.push({ path: url.pathname, authorization: request.headers.authorization })
+      if (url.pathname === "/to-outside") {
+        response.writeHead(302, { location: "http://outside.invalid/steal" })
+        response.end()
+        return
+      }
+      if (url.pathname === "/to-inside") {
+        response.writeHead(302, { location: "/final" })
+        response.end()
+        return
+      }
+      if (url.pathname === "/loop") {
+        response.writeHead(302, { location: "/loop" })
+        response.end()
+        return
+      }
+      response.writeHead(200, { "content-type": "text/plain" })
+      response.end(`ok ${url.pathname}`)
+    })
+    await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", () => resolve()))
+    const address = server.address()
+    base = `http://127.0.0.1:${typeof address === "object" && address ? address.port : 0}`
+  })
+
+  afterAll(() => {
+    server?.close()
+  })
+
+  function ctx(scope: object | string) {
+    const dir = workspace()
+    mkdirSync(path.join(dir, ".grepleaks"), { recursive: true })
+    writeFileSync(path.join(dir, ".grepleaks", "scope.json"), typeof scope === "string" ? scope : JSON.stringify(scope))
+    writeFileSync(
+      path.join(dir, ".grepleaks", "auth.json"),
+      JSON.stringify({ identities: [{ label: "owner", auth: { type: "bearer", token: "real-token" } }] }),
+    )
+    return { workspace: dir }
+  }
+
+  it("refuses every request when the scope file is invalid", async () => {
+    const result = await httpRequest(ctx("not json"), { url: `${base}/ok` })
+    expect(result.ok).toBe(false)
+    expect(result.error).toContain("Scope refused")
+  })
+
+  it("scope-checks each redirect hop", async () => {
+    const context = ctx({ in_scope: ["127.0.0.1"] })
+    const outside = await httpRequest(context, { url: `${base}/to-outside`, followRedirects: true })
+    expect(outside.ok).toBe(false)
+    expect(outside.error).toContain("redirect to http://outside.invalid/steal")
+
+    const inside = await httpRequest(context, { url: `${base}/to-inside`, followRedirects: true })
+    expect(inside.ok).toBe(true)
+    expect(inside.bodyText).toBe("ok /final")
+
+    const loop = await httpRequest(context, { url: `${base}/loop`, followRedirects: true })
+    expect(loop.ok).toBe(false)
+    expect(loop.error).toContain("too many redirects")
+
+    const manual = await httpRequest(context, { url: `${base}/to-outside` })
+    expect(manual.ok).toBe(true)
+    expect(manual.evidence.status).toBe(302)
+  })
+
+  it("does not replay redacted credentials", async () => {
+    seen.length = 0
+    const result = await httpRequest(ctx({ in_scope: ["127.0.0.1"] }), {
+      url: `${base}/ok`,
+      headers: { Authorization: "Bearer [redacted]" },
+    })
+    expect(result.ok).toBe(true)
+    expect(seen[0]?.authorization).toBe("Bearer real-token")
+  })
 })
 
 describe("triage", () => {
@@ -206,5 +362,31 @@ describe("triage", () => {
       impact: "short",
     })
     expect(result.warnings.length).toBeGreaterThan(0)
+  })
+})
+
+describe("scope loading fails closed", () => {
+  function withScopeFile(content: string): string {
+    const dir = workspace()
+    mkdirSync(path.join(dir, ".grepleaks"), { recursive: true })
+    writeFileSync(path.join(dir, ".grepleaks", "scope.json"), content)
+    return dir
+  }
+
+  it("throws on an empty or non-object scope file", () => {
+    expect(() => loadScope(withScopeFile(""))).toThrow(ScopeError)
+    expect(() => loadScope(withScopeFile("[]"))).toThrow(ScopeError)
+    expect(() => loadScope(withScopeFile("null"))).toThrow(ScopeError)
+  })
+
+  it("throws when GREPLEAKS_SCOPE points at a missing file", () => {
+    const previous = process.env.GREPLEAKS_SCOPE
+    process.env.GREPLEAKS_SCOPE = path.join(workspace(), "missing-scope.json")
+    try {
+      expect(() => loadScope(workspace())).toThrow(ScopeError)
+    } finally {
+      if (previous === undefined) delete process.env.GREPLEAKS_SCOPE
+      else process.env.GREPLEAKS_SCOPE = previous
+    }
   })
 })

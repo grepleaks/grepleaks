@@ -16,7 +16,9 @@ if [ -n "${GREPLEAKS_HOST_TOKEN:-}" ]; then
   # the pairing credential. host_bridge.py keeps its own copy from this env.
   printf '%s' "$GREPLEAKS_HOST_TOKEN" > /run/grepleaks/host-token
   chmod 600 /run/grepleaks/host-token
-  python3 /opt/grepleaks/host_bridge.py >/dev/null 2>&1 &
+  # Minimal environment: the bridge must not inherit provider API keys, which
+  # the agent's shell could read back from /proc/<pid>/environ.
+  env -i PATH="$PATH" GREPLEAKS_HOST_TOKEN="$GREPLEAKS_HOST_TOKEN" python3 /opt/grepleaks/host_bridge.py >/dev/null 2>&1 &
 fi
 python3 /opt/grepleaks/config.py
 unset OPENCODE_CONFIG_CONTENT
@@ -28,7 +30,30 @@ export OPENCODE_DISABLE_PROJECT_CONFIG=1
 export OPENCODE_DISABLE_AUTOUPDATE=1
 if [ "${1:-}" = serve ]; then
   shift
-  exec grepleaks serve --port 4096 --hostname 0.0.0.0 "$@"
+  set -- serve --port 4096 --hostname 0.0.0.0 "$@"
+elif [ "${1:-}" != run ]; then
+  set -- /engagement "$@"
 fi
-if [ "${1:-}" = run ]; then exec grepleaks "$@"; fi
-exec grepleaks /engagement "$@"
+
+# Native Linux Docker: the container runs as root, so files it creates in the
+# bind mounts end up root-owned (mode 0700 with umask 077) and the next launch
+# fails with "Permission denied". The launcher passes the host user's ids;
+# hand the state and workspace back to them on start and on exit.
+if [[ "${GREPLEAKS_HOST_UID:-}" =~ ^[0-9]+$ && "${GREPLEAKS_HOST_GID:-}" =~ ^[0-9]+$ && "$GREPLEAKS_HOST_UID" != 0 ]]; then
+  give_back() { chown -R "$GREPLEAKS_HOST_UID:$GREPLEAKS_HOST_GID" /var/lib/grepleaks /engagement 2>/dev/null || true; }
+  give_back
+  # <&0: a background job would otherwise get /dev/null as stdin (no TUI input).
+  grepleaks "$@" <&0 &
+  child=$!
+  # docker stop sends TERM to PID 1 (this shell): forward it. Ctrl+C reaches
+  # the TUI directly; ':' (not '') so the child keeps the default handler.
+  trap 'kill -TERM "$child" 2>/dev/null' TERM HUP
+  trap ':' INT
+  status=0
+  wait "$child" || status=$?
+  # wait returns early when a trapped signal arrives: wait for the real exit.
+  while kill -0 "$child" 2>/dev/null; do wait "$child" || status=$?; done
+  give_back
+  exit "$status"
+fi
+exec grepleaks "$@"
