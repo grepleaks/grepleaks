@@ -14,10 +14,16 @@ export const GREPLEAKS_PROVIDER_ID = "grepleaks"
 export const GREPLEAKS_BASE_URL = "https://grepleaks.com/v1"
 export const GREPLEAKS_DEFAULT_MODEL = "abliterated-model-large-v2"
 export const GREPLEAKS_CONSOLE_URL = "https://grepleaks.com/console"
-export const GREPLEAKS_MODELS: Record<string, { name: string; reasoning: boolean; tool_call: boolean }> = {
-  "abliterated-model-large-v2": { name: "Abliterated Large V2", reasoning: true, tool_call: true },
-  "abliterated-model-large-flash": { name: "Abliterated Large Flash", reasoning: true, tool_call: true },
-  "abliterated-model": { name: "Abliterated Model", reasoning: true, tool_call: true },
+// A context limit is required: with none (0), auto-compaction never triggers
+// (session/overflow.ts) and the history grows until the provider rejects it.
+const GREPLEAKS_LIMIT = { context: 1_000_000, output: 32_000 }
+export const GREPLEAKS_MODELS: Record<
+  string,
+  { name: string; reasoning: boolean; tool_call: boolean; limit: { context: number; output: number } }
+> = {
+  "abliterated-model-large-v2": { name: "Abliterated Large V2", reasoning: true, tool_call: true, limit: GREPLEAKS_LIMIT },
+  "abliterated-model-large-flash": { name: "Abliterated Large Flash", reasoning: true, tool_call: true, limit: GREPLEAKS_LIMIT },
+  "abliterated-model": { name: "Abliterated Model", reasoning: true, tool_call: true, limit: GREPLEAKS_LIMIT },
 }
 
 export function useModelSetup() {

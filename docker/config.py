@@ -6,6 +6,18 @@ import tempfile
 from pathlib import Path
 from urllib.parse import urlsplit
 
+# Managed models: same ids and default as the TUI (dialog-add-model.tsx) and
+# the gateway allowlist.
+GREPLEAKS_DEFAULT_MODEL = "abliterated-model-large-v2"
+# A context limit is required: with none (0), auto-compaction never triggers
+# (session/overflow.ts) and the history grows until the provider rejects it.
+GREPLEAKS_LIMIT = {"context": 1_000_000, "output": 32_000}
+GREPLEAKS_MODELS = {
+    "abliterated-model-large-v2": {"name": "Abliterated Large V2", "limit": GREPLEAKS_LIMIT},
+    "abliterated-model-large-flash": {"name": "Abliterated Large Flash", "limit": GREPLEAKS_LIMIT},
+    "abliterated-model": {"name": "Abliterated Model", "limit": GREPLEAKS_LIMIT},
+}
+
 
 def permissions():
     """Effective tool policy.
@@ -75,7 +87,8 @@ def configuration(env):
     if parsed.scheme not in ("http", "https") or not parsed.hostname or parsed.username or parsed.password:
         raise ValueError("Provider endpoint must be an HTTP(S) URL without embedded credentials")
     provider = "grepleaks" if managed else "byok"
-    model = "basilisk-1" if managed else env["BYOK_MODEL"]
+    # "basilisk-1", the pre-gateway id, is rejected by the gateway (400).
+    model = GREPLEAKS_DEFAULT_MODEL if managed else env["BYOK_MODEL"]
     result = {
         "$schema": "https://opencode.ai/config.json",
         "model": f"{provider}/{model}",
@@ -89,7 +102,7 @@ def configuration(env):
             "npm": "@ai-sdk/openai-compatible",
             "name": "Grepleaks" if managed else env.get("BYOK_PROVIDER_NAME", "BYOK"),
             "options": {"baseURL": endpoint, "apiKey": "{env:" + prefix + "_API_KEY}"},
-            "models": {model: {"name": model}},
+            "models": {k: dict(v) for k, v in GREPLEAKS_MODELS.items()} if managed else {model: {"name": model}},
         }},
         "permission": permissions(),
         "skills": {"paths": ["/opt/grepleaks/skills"]},
