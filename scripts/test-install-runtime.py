@@ -109,6 +109,31 @@ class RuntimeTests(unittest.TestCase):
     def test_runtime_ships_license_notice(self):
         self.assertIn("LICENSES/0-MIT.txt", install.RUNTIME)
 
+    def test_install_prunes_old_runtimes_but_keeps_previous(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            home, source = Path(tmp) / "home", Path(tmp) / "source"
+            for name in install.RUNTIME:
+                (source / name).parent.mkdir(parents=True, exist_ok=True)
+                (source / name).write_text("x")
+            base = home / ".local/share/grepleaks"
+            stale = []
+            for name in ("runtime-old1", "runtime-old2", "runtime-current"):
+                (base / name / "scripts").mkdir(parents=True)
+                (base / name / "scripts" / "launch.py").write_text("x")
+                stale.append(base / name)
+            unrelated = base / "runtime-notes"  # no launcher inside: not ours to delete
+            unrelated.mkdir()
+            wrapper = home / ".local/bin/grepleaks"
+            wrapper.parent.mkdir(parents=True)
+            wrapper.write_text(f"#!/bin/sh\n{install.MARKER}\nexec python3 {base}/runtime-current/scripts/launch.py \"$@\"\n")
+            with patch.dict(install.os.environ, {"SHELL": "/bin/sh"}), patch.object(install.os, "name", "posix"):
+                install.install(source, home)
+            remaining = sorted(p.name for p in base.glob("runtime-*"))
+            new = install.RUNTIME_NAME.search(wrapper.read_text()).group(0)
+            self.assertNotIn(new, ("runtime-old1", "runtime-old2", "runtime-current"))
+            self.assertEqual(remaining, sorted(["runtime-current", "runtime-notes", new]))
+
     def test_detection_shape(self):
         status = install.detect_runtime()
         for key in ("system", "docker", "colima", "orbstack", "rancher", "desktop", "podman"):
