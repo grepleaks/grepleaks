@@ -3,8 +3,8 @@ version: 2
 # Major bumps are ignored on purpose: they change APIs (opentui, ai-sdk) and
 # invalidate the exact versions pinned in `patchedDependencies` and patches/,
 # so they are done by hand on a branch.
-# 0.x @opentui minors, effect patches/minors, and @effect/* minors are
-# excluded: the effect 4.0 beta -> stable transition removes the unstable
+# 0.x @opentui minors, effect patches/minors, and @effect/* patches/minors
+# are excluded: the effect 4.0 beta -> stable transition removes the unstable
 # HTTP modules, and these packages invalidate engine/patches/.
 # drizzle-orm/drizzle-kit rc updates are handled manually while the ORM is
 # pre-1.0. @modelcontextprotocol/sdk stays at 1.31.0 until its patch is
@@ -38,6 +38,7 @@ updates:
       - dependency-name: "@effect/*"
         update-types:
           - "version-update:semver-minor"
+          - "version-update:semver-patch"
       - dependency-name: "drizzle-orm"
         update-types:
           - "version-update:semver-minor"
