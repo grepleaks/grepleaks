@@ -11,13 +11,6 @@
 
 FROM debian:stable-slim
 
-# Build date and source ref, read by the launcher to refresh the image on the
-# same ref without moving the engine.
-ARG BUILT_AT=
-ARG UPDATE_REF=
-LABEL org.grepleaks.built=$BUILT_AT
-LABEL org.grepleaks.ref=$UPDATE_REF
-
 ENV DEBIAN_FRONTEND=noninteractive \
     PATH="/usr/local/bin:/root/go/bin:/usr/local/go/bin:${PATH}" \
     GOBIN=/usr/local/bin
@@ -75,6 +68,15 @@ COPY LICENSES/0-MIT.txt /opt/grepleaks/LICENSES/0-MIT.txt
 # Reported by `grepleaks --version`. The installer passes the release or ref.
 ARG OPENCODE_VERSION=local
 ENV OPENCODE_VERSION=${OPENCODE_VERSION}
+
+# Build date and source ref, read by the launcher to refresh the image on the
+# same ref without moving the engine. Declared last: their values change on
+# every build, and an ARG invalidates the cache of every RUN after it, which
+# made each update redo apt, the bun download and bun install.
+ARG BUILT_AT=
+ARG UPDATE_REF=
+LABEL org.grepleaks.built=$BUILT_AT
+LABEL org.grepleaks.ref=$UPDATE_REF
 
 EXPOSE 4096
 ENTRYPOINT ["/opt/grepleaks/entrypoint.sh"]
