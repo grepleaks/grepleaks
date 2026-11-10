@@ -4,6 +4,21 @@ Releases are tagged `vX.Y.Z` and published on the
 [releases page](https://github.com/grepleaks/grepleaks/releases). Installation and
 upgrade steps live in [INSTALL.md](INSTALL.md).
 
+## [0.1.4] - 2026-11-10
+
+### Fixed
+
+- The findings summary (`.grepleaks/summary.json`) is written atomically, so
+  the TUI findings panel can no longer read a half-written file.
+- `scripts/smoke-container.py --launcher` accepts the `vX.Y.Z` version printed
+  by an installed release.
+
+### Changed
+
+- Installs and updates remove old `runtime-*` copies. The new runtime and the
+  one in use until now are kept; earlier installs left one directory behind per
+  update.
+
 ## [0.1.3] - 2026-11-10
 
 ### Security
