@@ -4,6 +4,51 @@ Releases are tagged `vX.Y.Z` and published on the
 [releases page](https://github.com/grepleaks/grepleaks/releases). Installation and
 upgrade steps live in [INSTALL.md](INSTALL.md).
 
+## [0.1.3] - 2026-11-10
+
+### Security
+
+- **Host companion:** every host command is now confirmed in a native dialog on
+  the host itself (macOS, Windows, Linux with zenity or kdialog), showing the
+  exact command, folder and time limit. Deny is the default; without a dialog
+  the command is refused. The in-app prompt ran inside the container and could
+  be bypassed by a command running there. The bridge no longer inherits the
+  provider keys.
+- **Scope enforcement fails closed:** an invalid scope file or an empty
+  `in_scope` denies every request. URLs are compared after parsing, so queries,
+  case, dot segments, encoded slashes and default ports no longer get past an
+  out-of-scope entry; redirects are scope-checked hop by hop; CIDR entries apply
+  to resolved hostnames.
+- **State directory:** the launcher never follows a symlink planted in the
+  state directory (launcher files, workspace, exchange, session database,
+  `--repair-db`).
+- **Updates:** `grepleaks update` no longer falls back to `main` when the
+  release lookup fails, and refuses a downgrade unless
+  `GREPLEAKS_ALLOW_DOWNGRADE=1`.
+
+### Fixed
+
+- The IDOR oracle reported a vulnerability when access control worked (the
+  second identity was denied). It now requires the non-owner to receive the
+  owner's data.
+- Replays of authenticated findings sent the stored `[redacted]` credential;
+  the auth profile now supplies the real one.
+- Managed models: the environment setup used a retired model id, and the
+  missing context limit disabled auto-compaction. Both are fixed, including for
+  configurations saved before.
+- Native Linux Docker: the second launch failed with `Permission denied`
+  (root-owned state). Files are handed back to the host user.
+- `--repair-db` stops leftover session containers first and works on Windows.
+
+### Changed
+
+- Idle CPU: the home animation runs at 12 fps and pauses when the terminal is
+  unfocused; the credit balance and findings panel stop polling redundantly.
+- Updates reuse the Docker cache instead of rebuilding every layer, and an
+  offline launch no longer waits on the release lookup.
+- Since 0.1.2: evidence workflow and runtime installer, agent evaluation
+  fixtures in CI, CodeQL hardening and dependency updates.
+
 ## [0.1.2] - 2026-10-29
 
 ### Added
