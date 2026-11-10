@@ -8,6 +8,7 @@ import platform
 import queue
 import re
 import secrets
+import shutil
 import signal
 import subprocess
 import sys
@@ -53,6 +54,62 @@ def validate(command):
     if cwd is not None and (not isinstance(cwd, str) or len(cwd) > 4096):
         raise ValueError("invalid cwd")
     return argv, timeout, cwd
+
+
+CONFIRM_SECONDS = 120
+
+
+def describe(command, workspace):
+    argv, timeout, cwd = validate(command)
+    shown = " ".join(json.dumps(part) if (not part or any(c.isspace() or c in "\"'\\" for c in part)) else part for part in argv)
+    if len(shown) > 1500:
+        shown = shown[:1500] + " …"
+    return f"Grepleaks wants to run on THIS computer (outside Docker):\n\n{shown}\n\nFolder: {cwd or workspace}\nTime limit: {timeout:g}s"
+
+
+def confirm(command, workspace):
+    """Ask the person at the host, outside the container, before every command.
+
+    The in-app prompt runs inside the container, where anything the agent runs
+    as root can reach the bridge directly; it cannot be the only gate. The text
+    is passed as an argument (never interpolated into a script) and the default
+    answer is Deny. With no dialog available the command is refused.
+    """
+    text = describe(command, workspace)
+    try:
+        if sys.platform == "darwin":
+            script = (
+                "on run argv\n"
+                'display dialog (item 1 of argv) with title "Grepleaks host command" '
+                'buttons {"Deny", "Allow"} default button "Deny" cancel button "Deny" '
+                f"with icon caution giving up after {CONFIRM_SECONDS}\n"
+                "return button returned of result\n"
+                "end run"
+            )
+            done = subprocess.run(["osascript", "-e", script, text], capture_output=True, text=True, timeout=CONFIRM_SECONDS + 10)
+            return done.returncode == 0 and done.stdout.strip() == "Allow"
+        if os.name == "nt":
+            script = (
+                "Add-Type -AssemblyName PresentationFramework;"
+                "$r=[System.Windows.MessageBox]::Show($env:GREPLEAKS_CONFIRM_TEXT,'Grepleaks host command','YesNo','Warning','No');"
+                "if($r -eq 'Yes'){exit 0}else{exit 1}"
+            )
+            env = dict(os.environ, GREPLEAKS_CONFIRM_TEXT=text)
+            done = subprocess.run(["powershell", "-NoProfile", "-NonInteractive", "-Command", script], env=env, capture_output=True, timeout=CONFIRM_SECONDS + 10)
+            return done.returncode == 0
+        if os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"):
+            if shutil.which("zenity"):
+                done = subprocess.run(["zenity", "--question", "--no-markup", "--default-cancel", "--title=Grepleaks host command",
+                                       "--ok-label=Allow", "--cancel-label=Deny", f"--timeout={CONFIRM_SECONDS}", f"--text={text}"],
+                                      capture_output=True, timeout=CONFIRM_SECONDS + 10)
+                return done.returncode == 0
+            if shutil.which("kdialog"):
+                done = subprocess.run(["kdialog", "--title", "Grepleaks host command", "--warningyesno", text,
+                                       "--yes-label", "Allow", "--no-label", "Deny"], capture_output=True, timeout=CONFIRM_SECONDS + 10)
+                return done.returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+    return False
 
 
 def execute(command, workspace, stop):
@@ -111,7 +168,7 @@ class Handler(BaseHTTPRequestHandler):
         try: self.wfile.write(data)
         except (BrokenPipeError, ConnectionResetError): pass
     def do_POST(self):
-        self.connection.settimeout(130)
+        self.connection.settimeout(120 + CONFIRM_SECONDS + 30)
         if not hmac.compare_digest(self.headers.get("Authorization", ""), "Bearer " + self.server.token):
             self.reply(401, {"error": "Unauthorized"}); return
         # Browser-origin requests are never part of this local protocol.
@@ -153,8 +210,9 @@ class Handler(BaseHTTPRequestHandler):
                 self.reply(409, {"error": "Another host command is running"}); return
             self.server.current[identity] = job
         try:
-            self.server.pending.put_nowait({"id": identity, "command": data, "expires": time.time() + timeout + 5})
-            finished = job["event"].wait(timeout + 5)
+            self.server.pending.put_nowait({"id": identity, "command": data, "ttl": timeout + 5})
+            # The host asks the person first: allow for the confirmation window.
+            finished = job["event"].wait(timeout + CONFIRM_SECONDS + 15)
             self.reply(200 if finished else 504, job["result"] if finished else {"error": "Host command timed out; inspect host before retrying"})
         finally:
             with self.server.lock: self.server.current.pop(identity, None)
@@ -165,7 +223,7 @@ def request(url, token, route, data):
     # Never send the local pairing credential through HTTP_PROXY/HTTPS_PROXY.
     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
     try:
-        response = opener.open(req, timeout=130)
+        response = opener.open(req, timeout=120 + CONFIRM_SECONDS + 30)
     except urllib.error.HTTPError as error:
         error.close()
         raise
@@ -181,8 +239,18 @@ def worker(url, token, workspace, stop, exchange=None):
     while not stop.is_set():
         try:
             job = request(url, token, "/poll", {"info": info}).get("job")
-            if job and job["expires"] > time.time() and not stop.is_set():
-                result = execute(job["command"], workspace, stop)
+            # The job carries a relative TTL: container and host clocks can
+            # drift apart (Docker Desktop VMs after sleep).
+            if job and not stop.is_set():
+                try:
+                    validate(job["command"])
+                except ValueError:
+                    request(url, token, "/result", {"id": job["id"], "result": {"error": "Invalid command"}})
+                    continue
+                if confirm(job["command"], workspace):
+                    result = execute(job["command"], workspace, stop)
+                else:
+                    result = {"error": "Refused on the host: the person at the computer did not allow this command (or no confirmation dialog is available)."}
                 request(url, token, "/result", {"id": job["id"], "result": result})
         except (OSError, ValueError, KeyError, urllib.error.URLError):
             stop.wait(0.5)
@@ -190,4 +258,6 @@ def worker(url, token, workspace, stop, exchange=None):
 
 if __name__ == "__main__":
     token = os.environ.get("GREPLEAKS_HOST_TOKEN", "")
+    # 0.0.0.0 is required: Docker's published port reaches the container's own
+    # interface, not its loopback. The host side is bound to 127.0.0.1 (-p).
     Broker(("0.0.0.0", 8788), token).serve_forever()
