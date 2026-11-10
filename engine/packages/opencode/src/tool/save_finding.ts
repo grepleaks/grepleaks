@@ -119,6 +119,14 @@ export const SaveFindingTool = Tool.define(
               source: params.source,
               status: status as any,
             }
+            const redactedHeaders = Object.entries(evidence.request?.requestHeaders ?? {})
+              .filter(([, value]) => value.includes("[redacted]"))
+              .map(([key]) => key)
+            const redactionWarning = redactedHeaders.length
+              ? [
+                  `credential headers redacted (${redactedHeaders.join(", ")}); replays drop them and use the auth profile, so pass identities/identity if the request needs a specific login`,
+                ]
+              : []
             const guards = triage(input)
             const saved = store.save(input)
             return {
@@ -128,7 +136,7 @@ export const SaveFindingTool = Tool.define(
               status: saved.finding.status,
               severity: saved.finding.severity,
               completeness: guards.completeness,
-              warnings: [...guards.warnings, ...statusWarning],
+              warnings: [...guards.warnings, ...statusWarning, ...redactionWarning],
               holdingItWrong: guards.holdingItWrong,
               summary: store.summary(),
             }

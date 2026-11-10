@@ -6,7 +6,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import type { Engagement, Finding, Severity } from "./types"
 import { severityRank } from "./types"
-import { loadScope, scopeSummary } from "./scope"
+import { scopeSummary, tryLoadScope } from "./scope"
 import { openStore } from "./store"
 import { redactHeaders, redactText } from "./redact"
 
@@ -37,7 +37,7 @@ function headerLines(headers: Record<string, string> | undefined): string {
 }
 
 function loadEngagement(workspace: string): Engagement {
-  const scope = loadScope(workspace)
+  const scope = tryLoadScope(workspace).loaded
   if (scope) {
     return {
       name: scope.config.engagement ?? path.basename(workspace),
@@ -174,6 +174,8 @@ export function renderMarkdown(engagement: Engagement, scope: Record<string, unk
   lines.push("")
   if (scope.configured === false) {
     lines.push("No scope file was configured for this engagement.")
+  } else if (typeof scope.error === "string") {
+    lines.push(`Scope file is invalid: ${scope.error}`)
   } else {
     const inScope = Array.isArray(scope.inScope) ? scope.inScope : []
     const outOfScope = Array.isArray(scope.outOfScope) ? scope.outOfScope : []
@@ -338,7 +340,10 @@ export async function generateReport(options: {
   const findings = store.list({ limit: 500 }).filter(
     (finding) => finding.status !== "false_positive" && finding.status !== "suppressed",
   )
-  const scope = scopeSummary(loadScope(options.workspace))
+  const loadedScope = tryLoadScope(options.workspace)
+  const scope = loadedScope.error
+    ? { configured: true, error: loadedScope.error }
+    : scopeSummary(loadedScope.loaded)
   const engagement = loadEngagement(options.workspace)
   if (options.title) engagement.name = options.title
   const format = options.format ?? "markdown"
