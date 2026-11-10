@@ -97,6 +97,38 @@ def extract(archive, destination):
     return candidates[0]
 
 
+RUNTIME_NAME = re.compile(r"runtime-[A-Za-z0-9_]+")
+
+
+def previous_runtime(wrapper, base):
+    """The runtime the installed command pointed to before this install."""
+    try:
+        match = RUNTIME_NAME.search(wrapper.read_text())
+    except OSError:
+        return None
+    return base / match.group(0) if match else None
+
+
+def prune_runtimes(base, keep):
+    """Remove old runtime-* copies left by earlier installs.
+
+    Keeps the new runtime and the one the command used until now: an update is
+    started from that launcher, and an open session still loads files from it
+    (repair-db, the host companion's stage.py). Anything else is unreferenced.
+    Best effort: a directory in use (Windows) is simply left for next time.
+    """
+    keep = {path.resolve() for path in keep if path}
+    removed = 0
+    for entry in base.glob("runtime-*"):
+        if entry.is_symlink() or not entry.is_dir() or not RUNTIME_NAME.fullmatch(entry.name):
+            continue
+        if entry.resolve() in keep or not (entry / "scripts" / "launch.py").is_file():
+            continue
+        shutil.rmtree(entry, ignore_errors=True)
+        removed += not entry.exists()
+    return removed
+
+
 def install(source, home):
     windows = os.name == "nt"
     base = (Path(os.environ.get("LOCALAPPDATA", home / "AppData/Local")) / "Grepleaks"
@@ -110,6 +142,7 @@ def install(source, home):
             raise ValueError(f"Missing installation file: {name}")
     base.mkdir(parents=True, exist_ok=True)
     bindir.mkdir(parents=True, exist_ok=True)
+    previous = previous_runtime(wrapper, base) if wrapper.exists() else None
     # A version directory keeps the current command usable until all copies finish.
     runtime = Path(tempfile.mkdtemp(prefix="runtime-", dir=base))
     try:
@@ -128,6 +161,7 @@ def install(source, home):
     except BaseException:
         shutil.rmtree(runtime)
         raise
+    prune_runtimes(base, {runtime, previous})
     if windows:
         import winreg
         with winreg.CreateKey(winreg.HKEY_CURRENT_USER, "Environment") as key:
