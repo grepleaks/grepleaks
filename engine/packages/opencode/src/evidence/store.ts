@@ -3,7 +3,7 @@
  */
 
 import { createHash } from "node:crypto"
-import { chmodSync, mkdirSync, writeFileSync } from "node:fs"
+import { chmodSync, mkdirSync, renameSync, rmSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import type {
   Finding,
@@ -349,7 +349,17 @@ export class FindingStore {
         target: finding.target,
         category: finding.category,
       }))
-      writeFileSync(file, JSON.stringify({ generatedAt: now(), ...result, latest }, null, 2), { mode: 0o600 })
+      // Write a temporary file and rename it over the summary: the TUI polls
+      // this file and must never read a half-written one. rename() is atomic
+      // on the same filesystem.
+      const temporary = `${file}.${process.pid}.tmp`
+      try {
+        writeFileSync(temporary, JSON.stringify({ generatedAt: now(), ...result, latest }, null, 2), { mode: 0o600 })
+        renameSync(temporary, file)
+      } catch (error) {
+        rmSync(temporary, { force: true })
+        throw error
+      }
     } catch {
       // The summary is a UI convenience; never fail a finding write for it.
     }
